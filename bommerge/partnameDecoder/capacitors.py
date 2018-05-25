@@ -78,7 +78,7 @@ def kemet(partname):
         
     match = re.match(r'(C)(0201|0402|0603|0805|1206|1210|1808|1812|1825|2220|2225)(C)(\d{3})(J|K|M)(9|8|4|3|6|5|1|2|A)(R)', partname)
     if match:
-        print ('Capacitor mached: ' + partname)    
+        print ('Capacitor mached: ' + partname)
         capacitor = {}
         capacitor['series'] = 'C - Standard'
         capacitor['case'] = match.group(2)

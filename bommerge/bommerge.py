@@ -1,6 +1,7 @@
 from gui.mainWindow import MainWindow
 from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
+import os
 
 
 def loadJsonFile(filename):
@@ -10,15 +11,29 @@ def loadJsonFile(filename):
     return dictionary
 
 
-def loadProject(filename):   
+def loadProject(filename):       
     project = loadJsonFile(filename)
+    project_directory = getDirectory(filename)
+    print "Loading project: " + project_directory
+    for file in project:
+        if not os.path.isabs(file['filename']):
+            file['filename'] = os.path.normpath(os.path.join(project_directory, file['filename']))
+    print project        
     return project
     
 
 def saveProject(filename, project):
-    import json
-    with open(filename, 'w') as outputfile:
-        outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': ')))   
+    def save_json_file(filename, dictionary):
+        import json
+        with open(filename, 'w') as outputfile:
+            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': '))) 
+        
+    project_directory = getDirectory(filename)
+    for file in project:
+        normalized_path = os.path.normpath(file['filename'])
+        print normalized_path
+        file['filename'] = os.path.relpath(normalized_path, project_directory)       
+    save_json_file(filename, project)
 
 
 def parseCSVfiles(files, destynation):
@@ -62,6 +77,14 @@ def mergeProject(project, workingDirectory):
     csvExporter.save(dict(loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
 
 
+class ProjectConfigWidget(ProjectConfigurationWidget):    
+    def load_project(self, filename):
+        return loadProject(filename)
+        
+    def save_project_file(self, filename):
+        project = self.files_widget.create_file_list()
+        return saveProject(filename, project)
+
 def main():
     import argparse
     
@@ -83,7 +106,7 @@ def main():
             
     if project == None:        
         mainWindow = MainWindow()
-        projectConfigGui = ProjectConfigurationWidget(mainWindow, project)
+        projectConfigGui = ProjectConfigWidget(mainWindow)
         if projectConfigGui.result:  
             workingDirectory = getDirectory(projectConfigGui.result)
             project = loadProject(projectConfigGui.result)

@@ -1,0 +1,54 @@
+[
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-MICROHAL TESTER SPI LOOPBACK ver B.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_AK8975.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_AK8975_SPI.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_BMP280.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_BMP280_SPI.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-uHAL_DS18B20.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_LIS3DSH.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_MAX5134.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_MCP9800.csv"
+    },
+    {
+        "Quantity": 2,
+        "filename": "BOM_PartType-UHAL_MCP23017_LOOPBACK_Ver_B.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_MICRO_SD_BREAKOUT.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_MPL115A1.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_TESTER_CONNECTOR_BREAKOUT.csv"
+    }
+]

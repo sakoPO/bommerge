@@ -63,8 +63,11 @@ class MergeDialog(tk.Toplevel):
         self.destroy()
         
     @staticmethod
-    def merge(combos, merged):        
+    def merge(combos, merged):
+        fields_to_skip = ['validation_status']
         for field in merged.keys():
+            if field in fields_to_skip:
+                continue
             if field in ['Quantity', 'Designator']:
                 mergedComponent[field] = merged[field]
             else:

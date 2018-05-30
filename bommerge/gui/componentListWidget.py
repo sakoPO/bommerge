@@ -7,7 +7,7 @@ except ImportError:
 
 
 class ScrolledComponentsList(ttk.Frame):
-    def __init__(self, master=None, compound=tk.RIGHT, **kwargs):
+    def __init__(self, master, on_selction_change, on_item_double_click, compound=tk.RIGHT, **kwargs):
         """
         :param master: master widget
         :param compound: side for the Scrollbar to be on (tk.LEFT or tk.RIGHT)
@@ -24,8 +24,16 @@ class ScrolledComponentsList(ttk.Frame):
         self.treeview.tag_configure('MissingParameters', background='yellow')
         self.treeview.tag_configure('IncorrectParameters', background='red')
         self.treeview.tag_configure('PartnumberDecoderMissing', background='grey')
+        self.on_selction_change = on_selction_change
+        self.treeview.bind('<ButtonRelease-1>', self._on_item_selected)
+        if on_item_double_click:
+            self.treeview.bind('<Double-1>', on_item_double_click)
         self.__compound = compound
         self._grid_widgets()
+
+    def _on_item_selected(self, event):
+        if self.on_selction_change:
+            self.on_selction_change()
 
     def _grid_widgets(self):
         """

@@ -1,5 +1,8 @@
 from gui import componentListWidget as componentList
 from gui import mergeDialog as mergeDialog
+from gui import partDetailDialog as partDetailDialog
+from components import capacitor
+from components import resistor
 try:
     import Tkinter as tk
     import ttk
@@ -13,201 +16,205 @@ def loadFile(filename):
     with open(filename) as inputFile:
         bom = json.load(inputFile)
     return bom
-    
-
-def loadBOM(filename):
-    bom = loadFile(filename)
-    capacitors = {}
-    capacitors['components'] = bom['Capacitors']
-    capacitors['columns'] = capacitors['components'][0].keys()
-
-    resistors = {}
-    resistors['components'] = bom['Resistors']
-    resistors['columns'] = resistors['components'][0].keys()
-
-    inductors={}
-    inductors['components'] = bom['Inductors']
-    if inductors['components']:
-        inductors['columns'] = inductors['components'][0].keys()
-
-    integratedCircuits = {}
-    integratedCircuits['components'] = bom['IntegratedCircuits']
-    integratedCircuits['columns'] = integratedCircuits['components'][0].keys()
-
-    connectors = {}
-    connectors['components'] = bom['Connectors']
-    if connectors['components']:
-        connectors['columns'] = connectors['components'][0].keys()
-
-    others = {}
-    others['components'] = bom['Others']
-    if others['components']:
-        keys = set()
-        for component in others['components']:
-            for key in component.keys():
-                keys.add(key)
-        others['columns'] = list(keys)
-    return {'Capacitors' : capacitors, 'Resistors' : resistors, 'Inductors' : inductors, 'IntegratedCircuits' : integratedCircuits, 'Connectors' : connectors,'Others' : others}
-#colors = ['red', 'green', 'yellow', 'orange', 'blue', 'navy']
 
 
-def createComponentWidget(root, columns, values):
-    widget = componentList.ScrolledComponentsList(master=root, selectmode=tk.EXTENDED)  
-    widget.addColumns(columns)
-    for i, component in enumerate(values):
-        if 'status' in component:
-            widget.addItem(str(i), component, component['status'])
-        else:
-            widget.addItem(str(i), component)
-    return widget
-
-
-def refreshComponentWidget(widget, components):
-    widget.removeAllItems()
-    for i, component in enumerate(components):
-        if 'status' in component:
-            widget.addItem(str(i), component, component['status'])
-        else:
-            widget.addItem(str(i), component)
-
-
-def createFrame(root, columns, components):
-    frame = ttk.Frame(root)
-    componentsWidget = createComponentWidget(frame, columns, components)
-    componentsWidget.pack()
-    button = tk.Button(frame, text='Merge', width=25, command= lambda : onMergeButtonPressed(root, componentsWidget, components))
-    button.pack()
-    return frame
-    
-
-def onMergeButtonPressed(parent, widget, components):
-    componentsToMerge = []
-    selectedIndices = widget.getSelectedIndices()
-    for i in selectedIndices:
-        componentsToMerge.append(components[i])
-
-    merged = mergeDialog.MergeDialog(parent, widget.getDisplayedFieldsNames(), componentsToMerge)  
-    if merged.result:
-        selectedIndices.sort(reverse=True)
-        for index in selectedIndices:
-            del components[index]
-        components.append(merged.result)
-        components.sort()
-        refreshComponentWidget(widget, components)
-
-
-def validate_resistors(components):
-    from partnameDecoder import resistors as resistorResolver
-
+def validate(part, partname_resolver, required_fields, fields_to_check):
     def has_required_fields(part):
-        required_fields = ['Resistance', 'Case']
         for field in required_fields:
            if not part[field] or part[field] == '':
-               return False 
-        return True   
-        
+               return False
+        return True
+
     def validateParameters(part, resolved):
-        fields_to_check = ['Resistance', 'Case', 'Tolerance']
         for field in fields_to_check:
             if field in resolved:
                 if part[field] != resolved[field]:
                     print resolved
                     print str(field)
                     return False
-        return True     
-       
-    for part in components:
-        validation_status = None
-        if not has_required_fields(part):
-            validation_status = 'MissingParameters'
-                
-        if part['Manufacturer Part Number']:
-            resolvedParameters = resistorResolver.resolve(part['Manufacturer Part Number'])
-            if resolvedParameters:
-                if validateParameters(part, resolvedParameters) == False:
-                    validation_status = 'IncorrectParameters'
-            else:
-                validation_status = 'PartnumberDecoderMissing'
-        if validation_status:
-            print 'Resistor validation failded, status: ' + validation_status
-            part['status'] = validation_status
-                    
-def validate_capacitors(components):
+        return True
+
+    validation_status = None
+    if not has_required_fields(part):
+        validation_status = 'MissingParameters'
+
+    if part['Manufacturer Part Number']:
+        resolvedParameters = partname_resolver.resolve(part['Manufacturer Part Number'])
+        if resolvedParameters:
+            if validateParameters(part, resolvedParameters) == False:
+                validation_status = 'IncorrectParameters'
+        else:
+            validation_status = 'PartnumberDecoderMissing'
+    if validation_status:
+        print 'Part validation failded, status: ' + validation_status
+    return validation_status
+
+
+def validate_resistor(part):
+    from partnameDecoder import resistors as resistorResolver
+    required_fields = ['Resistance', 'Case']
+    fields_to_check = ['Resistance', 'Case', 'Tolerance']
+    return validate(part, resistorResolver, required_fields, fields_to_check)
+
+
+def validate_capacitor(part):
     from partnameDecoder import capacitors as capacitorResolver
+    required_fields = ['Capacitance', 'Voltage', 'Case']
+    fields_to_check = ['Capacitance', 'Voltage', 'Case', 'Tolerance']
+    return validate(part, capacitorResolver, required_fields, fields_to_check)
 
-    def has_required_fields(part):
-        required_fields = ['Capacitance', 'Voltage', 'Case']
-        for field in required_fields:
-            if not part[field] or part[field] == '':
-                return False 
-        return True
-        
-    def validateParameters(part, resolved):
-        fields_to_check = ['Capacitance', 'Voltage', 'Case', 'Tolerance']
-        for field in fields_to_check:
-            if field in resolved:
-                if part[field] != resolved[field]:
-                    return False
-        return True
-       
-    for part in components:
-        validation_status = None
-        if not has_required_fields(part):
-            validation_status = 'MissingParameters'
-                
-        if part['Manufacturer Part Number'] != '':
-            resolvedParameters = capacitorResolver.resolve(part['Manufacturer Part Number'])
-            if resolvedParameters:
-                if validateParameters(part, resolvedParameters) == False:
-                    validation_status = 'IncorrectParameters'
+
+class ComponentGroup(ttk.Frame):
+    def __init__(self, parent, name, columns, components, validator_function = None):
+        ttk.Frame.__init__(self, parent)
+        self.parent = parent
+        self.name = name
+        self.components = components
+        self.validate = validator_function
+        self.create_gui(columns)
+        self.refresh_widget()
+
+        if self.name == 'Capacitors':
+            self.value_key = 'Capacitance'
+            from partnameDecoder import capacitors as capacitorResolver
+            self.resolver = capacitorResolver
+        elif self.name == 'Resistors':
+            self.value_key = 'Resistance'
+            from partnameDecoder import resistors as resistorResolver
+            self.resolver = resistorResolver
+        else:
+            self.value_key = 'Comment'
+            self.resolver = None
+
+
+    def create_gui(self, columns):
+        def on_selection_change():
+            if len(self.widget.getSelectedIndices()) > 1:
+                self.button.config(state=tk.NORMAL)
             else:
-                validation_status = 'PartnumberDecoderMissing'
+                self.button.config(state=tk.DISABLED)
 
-        if validation_status:
-            print 'Capacitor validation failded, status: ' + validation_status
-            part['status'] = validation_status
+        self.widget = componentList.ScrolledComponentsList(master=self,
+                                                           on_selction_change=on_selection_change,
+                                                           on_item_double_click=self.on_item_double_click,
+                                                           selectmode=tk.EXTENDED)
+        self.widget.addColumns(columns)
+        self.widget.pack(expand=True, fill=tk.BOTH)
+        self.button = tk.Button(self, text='Merge', width=25, command=self.on_merge_button_pressed)
+        self.button.config(state=tk.DISABLED)
+        self.button.pack()
 
 
-def createNotebook(root, components):
-    notebook = ttk.Notebook(root)    
+    def sort(self):
+        if self.name == 'Capacitors':
+            self.components.sort(key=lambda x: capacitor.convertCapacitanceToFarads(x['Capacitance']))
+        elif self.name == 'Resistors':
+            self.components.sort(key=lambda x: resistor.convertResistanceToOhms(x['Resistance']))
+        else:
+            self.components.sort()
+
+
+    def refresh_widget(self):
+        self.widget.removeAllItems()
+        for i, component in enumerate(self.components):
+            if self.validate:
+                component['validation_status'] = self.validate(component)
+            if 'validation_status' in component:
+                self.widget.addItem(str(i), component, component['validation_status'])
+            else:
+                self.widget.addItem(str(i), component)
     
-    validate_resistors(components['Resistors']['components'])
-    validate_capacitors(components['Capacitors']['components'])
 
-    if components['Resistors']['components']:
-        frame = createFrame(root, ['Quantity', 'Resistance', 'Tolerance', 'Case', 'Manufacturer', 'Manufacturer Part Number'], components['Resistors']['components'])
-        notebook.add(frame, text='Resistors')
-
-    if components['Capacitors']['components']:
-        frame = createFrame(root, ['Quantity', 'Capacitance', 'Voltage', 'Dielectric Type', 'Tolerance', 'Case', 'Manufacturer', 'Manufacturer Part Number'], components['Capacitors']['components'])
-        notebook.add(frame, text='Capacitors')
-       
-    if components['Inductors']['components']:
-        frame = createFrame(root, components['Inductors']['columns'], components['Inductors']['components'])
-        notebook.add(frame, text='Inductors')
-
-    if components['IntegratedCircuits']['components']:
-        frame = createFrame(root, components['IntegratedCircuits']['columns'], components['IntegratedCircuits']['components'])
-        notebook.add(frame, text='IC')
-
-    if components['Connectors']['components']:
-        frame = createFrame(root, components['Connectors']['columns'], components['Connectors']['components'])
-        notebook.add(frame, text='Connectors')
-
-    if components['Others']['components']:
-        frame = createFrame(root,  components['Others']['columns'], components['Others']['components'])
-        notebook.add(frame, text='Others')
-
-    return notebook    
+    def remove_components_by_indices(self, indices_list):
+        indices_list.sort(reverse=True)
+        for index in indices_list:
+            tmp = self.components.pop(index)
+            print ("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
         
-def onDoubleClick(event):
-    item = resistorsWidget.getSelected()
-    print("you clicked on", resistorsWidget.treeview.item(item,"text"))
+
+    def on_merge_button_pressed(self):
+        components_to_merge = []
+        selected_indices = self.widget.getSelectedIndices()
+        for i in selected_indices:
+            components_to_merge.append(self.components[i])
+
+        merged = mergeDialog.MergeDialog(self.parent, self.widget.getDisplayedFieldsNames(), components_to_merge)
+        if merged.result:
+            self.remove_components_by_indices(selected_indices)
+            merged_component = dict(merged.result)
+            self.components.append(merged_component)
+            self.sort()
+            self.refresh_widget()
+
+
+    def on_item_double_click(self, event):
+        item = self.widget.getSelectedIndices()
+        print("you clicked on: ", item)
+        component = self.components[item[0]]
+        if 'Manufacturer Part Number' in component:
+            resolved_parameters = self.resolver.resolve(component['Manufacturer Part Number'])
+        partDetailDialog.PartDetailDialog(self.parent, component, resolved_parameters)
+
+
+class ManualMerger(ttk.Notebook):
+    def __init__(self, parent, filename):
+        ttk.Notebook.__init__(self, parent)
+        self.components = loadFile(filename)
+        self.create_bookmarks()
+        self.pack(expand=True, fill=tk.BOTH)
+
+    def create_component_columns(self, component):
+        def remove_key(key):
+            if key in keys:
+                keys.remove(key)
+            return keys
+
+        def sort(x):
+            keys = {'Quantity': 1, 'Comment': 2, 'Description': 3, 'Manufacturer Part Number': 4, 'Manufacturer': 5}
+            if x in keys:
+                return keys[x]
+            return 99
+
+        keys = component
+        keys = remove_key('Designator')
+        keys.sort(key=sort)
+        return keys
+
+    def create_bookmarks(self):
+        def sort(x):
+            key = {'Capacitors': 1, 'Resistors': 2, 'Others': 100}
+            if x in key:
+                return key[x]
+            return 99
+
+        components_group = self.components.keys()
+        components_group.sort(key=sort)
+        for group in components_group:
+            if self.components[group]:
+                if group == 'Resistors':
+                    columns = ['Quantity', 'Resistance', 'Tolerance', 'Case', 'Manufacturer', 'Manufacturer Part Number']
+                    validator = validate_resistor
+                elif group == 'Capacitors':
+                    columns = ['Quantity', 'Capacitance', 'Voltage', 'Dielectric Type', 'Tolerance', 'Case', 'Manufacturer', 'Manufacturer Part Number']
+                    validator = validate_capacitor
+                elif group == 'Others':
+                    keys = set()
+                    for component in self.components[group]:
+                        for key in component.keys():
+                            keys.add(key)
+                    columns = self.create_component_columns(list(keys))
+                    validator = None
+                else:
+                    columns = self.create_component_columns(self.components[group][0].keys())
+                    validator = None
+
+                frame = ComponentGroup(self, group, columns, self.components[group], validator)
+                self.add(frame, text=group)
+
 
 def merge(filename):
     root = tk.Tk()
     root.title("BOM Merger")
-    notebook = createNotebook(root, loadBOM(filename))
-    notebook.pack()
+    manualMerger = ManualMerger(root, filename)
     root.mainloop()
 

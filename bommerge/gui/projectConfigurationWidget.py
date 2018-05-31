@@ -141,8 +141,8 @@ class bom_files_table(ttk.Frame):
         return project
 
 class ProjectConfigurationWidget(tk.Tk):
-    def __init__(self, parent, project_filename = None):
-        tk.Tk.__init__(self, parent)
+    def __init__(self, project_filename = None):
+        tk.Tk.__init__(self)
         self.title("Project Configurator")
 
         button_frame = ttk.Frame(self)

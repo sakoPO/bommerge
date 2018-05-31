@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
 import os
@@ -98,7 +100,7 @@ def main():
         workingDirectory = getDirectory(args.proj)
 
     if project == None:
-        projectConfigGui = ProjectConfigWidget(mainWindow)
+        projectConfigGui = ProjectConfigWidget()
         if projectConfigGui.result:
             workingDirectory = getDirectory(projectConfigGui.result)
             project = loadProject(projectConfigGui.result)

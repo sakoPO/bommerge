@@ -2,6 +2,7 @@ import csv
 
 def unify_dictionary_keys(bom):
     unified_keys = set()
+    unified_keys.add('Value')
     for key in bom.keys():
         for component in bom[key]:
             for key in component.keys():
@@ -12,17 +13,21 @@ def unify_dictionary_keys(bom):
         for component in bom[key]:
             unified_component = {}
             for key in unified_keys:
-                if key in component:
-                    unified_component[key] = component[key]
+                dest_key = 'Value' if key in ['Capacitance', 'Inductance'] else key                
+                if key in component:                    
+                    if isinstance(component[key], basestring):
+                        unified_component[dest_key] = component[key].encode('ascii', 'replace')
+                    else:
+                        unified_component[dest_key] = component[key]
                 else:
-                    unified_component[key] = ''
+                    unified_component[dest_key] = ''
             unified_bom.append(unified_component)
     return unified_bom
 
 
 def sort_keys(keys):
     def sorting_function(x):
-        positions = {'Quantity': 1, 'Manufacturer Part Number': 2, 'Manufacturer': 3, 'Comment': 4, 'Resistance': 5, 'Capacitance': 6, 'Voltage': 7, 'Case': 8, 'Tolerance': 9, 'Dielectric Type' : 10}
+        positions = {'Quantity': 0, 'Manufacturer Part Number': 2, 'Manufacturer': 3, 'Comment': 4, 'Resistance': 5, 'Capacitance': 6, 'Value': 7, 'Voltage': 8, 'Case': 9, 'Tolerance': 10, 'Dielectric Type' : 11}
         if x in positions:
             return positions[x]
         return 11    

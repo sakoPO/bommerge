@@ -1,16 +1,16 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+#with open("README.md", "r") as fh:
+#    long_description = fh.read()
 
 setuptools.setup(
-    name="bommerger",
+    name="bommerge",
     version="0.0.1",
     author="Pawel Okas",
     author_email="sako.po@gmail.com",
     description="BOM Merging Tool",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+#    long_description=long_description,
+#    long_description_content_type="text/markdown",
     url="https://github.com/sakoPO/bommerge",
     packages=setuptools.find_packages(),
     classifiers=(

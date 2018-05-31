@@ -41,7 +41,7 @@ def murata(partname):
         match = match_GCM_GCJ_series
         capacitor = {}
         capacitor['series'] = match.group(1)
-        capacitor['case'] = dimension[match.group(3)]
+        capacitor['Case'] = dimension[match.group(3)]
         capacitor['height'] = height[match.group(4)]
         capacitor['Dielectric Type'] = dielectric_type[match.group(5)]
         capacitor['Voltage'] = voltage[match.group(6)]
@@ -68,7 +68,7 @@ def kemet(partname):
     
         capacitor = {}
         capacitor['series'] = 'C - Standard'
-        capacitor['case'] = match.group(2)
+        capacitor['Case'] = match.group(2)
         capacitor['Dielectric Type'] = 'C0G'
         capacitor['Voltage'] = voltage[match.group(6)]
         capacitor['Capacitance'] = faradsToString(capacitanceStringToFarads_kamet(match.group(4)))
@@ -81,7 +81,7 @@ def kemet(partname):
         print ('Capacitor mached: ' + partname)
         capacitor = {}
         capacitor['series'] = 'C - Standard'
-        capacitor['case'] = match.group(2)
+        capacitor['Case'] = match.group(2)
         capacitor['Dielectric Type'] = 'X7R'
         capacitor['Voltage'] = voltage[match.group(6)]
         capacitor['Capacitance'] = faradsToString(capacitanceStringToFarads(match.group(4)))

@@ -36,20 +36,19 @@ class ScrolledComponentsList(ttk.Frame):
             self.on_selction_change()
 
     def _grid_widgets(self):
-        """
-        Puts the two whole widgets in the correct position depending on compound
-        :return: None
-        """
-        scrollbar_column = 0 if self.__compound is tk.LEFT else 2
-        self.treeview.grid(row=0, column=1, sticky="nswe")
-        self.scrollbar.grid(row=0, column=scrollbar_column, sticky="ns")
+        self.treeview.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
+        self.scrollbar.pack(side=tk.LEFT, fill=tk.Y)
 
     def addColumns(self, columns):
+        max_width = {'Quantity': 10*len('Quantity')}
         self.treeview['columns'] = columns
-        #self.treeview['show'] = 'headings'
+#        self.treeview['show'] = 'headings'
         for column in columns:
             self.treeview.heading(column, text=column)
-            self.treeview.column(column, width=10*len(column), anchor='center')
+            if column in max_width:
+                self.treeview.column(column, minwidth=10*len(column), width=max_width[column], anchor='center', stretch=tk.NO)
+            else:
+                self.treeview.column(column, minwidth=10*len(column), anchor='center', stretch=tk.YES)
 
     def addItem(self, item, component, tag=None):
         value = []

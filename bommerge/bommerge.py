@@ -1,4 +1,3 @@
-from gui.mainWindow import MainWindow
 from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
 import os
@@ -11,28 +10,28 @@ def loadJsonFile(filename):
     return dictionary
 
 
-def loadProject(filename):       
+def loadProject(filename):
     project = loadJsonFile(filename)
     project_directory = getDirectory(filename)
     print "Loading project: " + project_directory
     for file in project:
         if not os.path.isabs(file['filename']):
             file['filename'] = os.path.normpath(os.path.join(project_directory, file['filename']))
-    print project        
+    print project
     return project
-    
+
 
 def saveProject(filename, project):
     def save_json_file(filename, dictionary):
         import json
         with open(filename, 'w') as outputfile:
-            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': '))) 
-        
+            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': ')))
+
     project_directory = getDirectory(filename)
     for file in project:
         normalized_path = os.path.normpath(file['filename'])
         print normalized_path
-        file['filename'] = os.path.relpath(normalized_path, project_directory)       
+        file['filename'] = os.path.relpath(normalized_path, project_directory)
     save_json_file(filename, project)
 
 
@@ -46,7 +45,7 @@ def getDirectory(path):
     import os
     absoluteProjectFilenamePath = os.path.abspath(path)
     return os.path.dirname(absoluteProjectFilenamePath)
-    
+
 
 def replaceFileExtension(filename, newExtension):
     import os
@@ -60,7 +59,7 @@ def getFilenameFromPath(path):
 
 def mergeProject(project, workingDirectory):
     import os
-    import automaticMerger    
+    import automaticMerger
     import guiBOM as manual_merger
     directory = workingDirectory + "/tmp"
     if not os.path.exists(directory):
@@ -72,51 +71,42 @@ def mergeProject(project, workingDirectory):
     automergeOutputFile = os.path.join(directory, 'automerged.json')
     automaticMerger.merge(project, automergeOutputFile)
     manual_merger.merge(automergeOutputFile)
-    
+
     from exporters import csvExporter
     csvExporter.save(dict(loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
 
 
-class ProjectConfigWidget(ProjectConfigurationWidget):    
+class ProjectConfigWidget(ProjectConfigurationWidget):
     def load_project(self, filename):
         return loadProject(filename)
-        
+
     def save_project_file(self, filename):
         project = self.files_widget.create_file_list()
         return saveProject(filename, project)
 
+
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proj", help="Project definition file")
-    parser.add_argument("-d", "--directory", help="Working directory, this is place where project files will be crated.")
     args = parser.parse_args()
-    
+
     project = None
     if args.proj:
         project = loadProject(args.proj)
         workingDirectory = getDirectory(args.proj)
-        
-    if args.directory:
-        projename = getProjectFilename(args.directory)
-        if projname:
-            project = loadProject(projname)
-            workingDirectory = getDirectory(projname)
-            
-    if project == None:        
-        mainWindow = MainWindow()
+
+    if project == None:
         projectConfigGui = ProjectConfigWidget(mainWindow)
-        if projectConfigGui.result:  
+        if projectConfigGui.result:
             workingDirectory = getDirectory(projectConfigGui.result)
             project = loadProject(projectConfigGui.result)
-        
+
     if project:
         mergeProject(project, workingDirectory)
-    
-    mainWindow.mainloop()
-    
+
 
 if __name__ == "__main__":
     main()
-    
+

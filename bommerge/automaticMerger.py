@@ -40,10 +40,10 @@ class ComponentContainer:
 
     @staticmethod
     def isSame(componentA, componentB):
-        raise RuntimeError, 'Unimplemented method'
+        raise RuntimeError('Unimplemented method')
     @staticmethod
     def valueForCompare(k):
-        raise RuntimeError, 'Unimplemented method'
+        raise RuntimeError('Unimplemented method')
     @staticmethod
     def transform(part, filename):
         newPart = part
@@ -181,7 +181,7 @@ def convertCsvToJson(csvFile):
     csvToJson.convert(csvFile, 'tmp')
 
 def loadFile(filename):
-    print "Loading json file: " + filename
+    print("Loading json file: " + filename)
     import json
     with open(filename) as inputFile:
         bom = json.load(inputFile)

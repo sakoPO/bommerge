@@ -29,8 +29,8 @@ def validate(part, partname_resolver, required_fields, fields_to_check):
         for field in fields_to_check:
             if field in resolved:
                 if part[field] != resolved[field]:
-                    print resolved
-                    print str(field)
+                    print(resolved)
+                    print(str(field))
                     return False
         return True
 
@@ -46,7 +46,7 @@ def validate(part, partname_resolver, required_fields, fields_to_check):
         else:
             validation_status = 'PartnumberDecoderMissing'
     if validation_status:
-        print 'Part validation failded, status: ' + validation_status
+        print('Part validation failded, status: ' + validation_status)
     return validation_status
 
 
@@ -129,7 +129,7 @@ class ComponentGroup(ttk.Frame):
         indices_list.sort(reverse=True)
         for index in indices_list:
             tmp = self.components.pop(index)
-            print ("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
+            print("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
         
 
     def on_merge_button_pressed(self):

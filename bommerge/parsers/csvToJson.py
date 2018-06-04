@@ -63,7 +63,7 @@ def getQuantity(component):
     for field in ['Quantity', 'quantity', 'Qty', 'qty']:
         if field in component:
             return component[field]
-    raise RuntimeError, "Unable to decode quantity form component" + str(component)
+    raise RuntimeError("Unable to decode quantity form component" + str(component))
 
 def getCase(component):
     imperialCase = ['01005', '0201', '0402', '0603', '0805', '1008', '1206', '1210', '1806', '1812', '2010', '2512']
@@ -326,7 +326,7 @@ def decodeIntegratedCircuit(component):
     return ic
 
 def loadCSVFile(filename):    
-    with open(filename, 'rb') as csvfile:
+    with open(filename, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         componentList = []
         for row in reader:
@@ -335,7 +335,7 @@ def loadCSVFile(filename):
     return componentList
 
 def saveJsonFile(filename, content):
-    print "saving: " + filename
+    print("saving: " + filename)
     import json
     with open(filename, 'w') as outfile:
         outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
@@ -379,7 +379,7 @@ def replaceFileExtension(filename, newExtension):
     return os.path.splitext(filename)[0] + newExtension
 
 def convert(filename, outputdir):
-    print "Converting CSV: " + filename + ", result will be stored in: " + outputdir
+    print("Converting CSV: " + filename + ", result will be stored in: " + outputdir)
     import os
     components = loadCSVFile(filename)
     fileContent = process(components)
@@ -387,3 +387,4 @@ def convert(filename, outputdir):
     outputFile = replaceFileExtension(getFilenameFromPath(filename), '.json')
     outputFile = os.path.join(outputdir, outputFile)
     saveJsonFile(outputFile, fileContent)
+

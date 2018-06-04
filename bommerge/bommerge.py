@@ -15,11 +15,11 @@ def loadJsonFile(filename):
 def loadProject(filename):
     project = loadJsonFile(filename)
     project_directory = getDirectory(filename)
-    print "Loading project: " + project_directory
+    print("Loading project: " + project_directory)
     for file in project:
         if not os.path.isabs(file['filename']):
             file['filename'] = os.path.normpath(os.path.join(project_directory, file['filename']))
-    print project
+    print(project)
     return project
 
 
@@ -32,13 +32,13 @@ def saveProject(filename, project):
     project_directory = getDirectory(filename)
     for file in project:
         normalized_path = os.path.normpath(file['filename'])
-        print normalized_path
+        print(normalized_path)
         file['filename'] = os.path.relpath(normalized_path, project_directory)
     save_json_file(filename, project)
 
 
 def parseCSVfiles(files, destynation):
-    print "Parsing csv files and saving results to: " + destynation
+    print("Parsing csv files and saving results to: " + destynation)
     for f in files:
         csvToJson.convert(f['filename'], destynation)
 

@@ -160,7 +160,8 @@ class ProjectConfigurationWidget(tk.Tk):
         self.files_widget.grid(row=2)
 
         self.result = None
-        self.projectDir = None        
+        self.projectDir = None
+        self.project_filename = project_filename        
         if project_filename:
            self.load_project_and_update_widget(project_filename)
 
@@ -185,16 +186,19 @@ class ProjectConfigurationWidget(tk.Tk):
         return initial_dir
 
 
-    def save_project(self):   
-        filename = filedialog.asksaveasfilename(initialdir = self.get_initial_dir(), title = "Save file",filetypes = (("BOM merger project","*.bomproj"),("all files","*.*")))
-        if filename:
-            self.projectDir = os.path.dirname(filename)
-            self.project_filename = filename
-            self.save_project_file(filename)
-            return True
-        return False
+    def save_project(self):
+        if self.project_filename:
+            filename = self.project_filename
+        else:
+            filename = filedialog.asksaveasfilename(initialdir = self.get_initial_dir(), title = "Save file",filetypes = (("BOM merger project","*.bomproj"),("all files","*.*")))
+            if not filename:
+                return False
+        self.projectDir = os.path.dirname(filename)
+        self.project_filename = filename
+        self.save_project_file(filename)
+        return True
 
-            
+
     def save_and_merge(self):
         if self.save_project():
             self.result = self.project_filename
@@ -202,6 +206,7 @@ class ProjectConfigurationWidget(tk.Tk):
 
     def load_project_and_update_widget(self, filename):
         project = self.load_project(filename)
+        self.project_filename = filename
         for file in project:
             self.files_widget.add_file(file['filename'], file['Quantity'])
         self.projectDir = os.path.dirname(filename)

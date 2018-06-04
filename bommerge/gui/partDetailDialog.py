@@ -16,6 +16,9 @@ class PartDetailDialog(tk.Toplevel):
         columns = self.sort_columns(component.keys())
         columns.remove('Designator')
         columns.remove('validation_status')
+        
+        if decoded == None:
+            decoded = []
 
         self._createComponentsTable(columns, [component, decoded])
         self.partname_frame = self.create_frame_with_parameters_decoded_from_partname(decoded)

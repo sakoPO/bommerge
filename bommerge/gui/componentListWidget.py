@@ -24,6 +24,7 @@ class ScrolledComponentsList(ttk.Frame):
         self.treeview.tag_configure('MissingParameters', background='yellow')
         self.treeview.tag_configure('IncorrectParameters', background='red')
         self.treeview.tag_configure('PartnumberDecoderMissing', background='grey')
+        self.treeview.tag_configure('PartActive', background='green')
         self.on_selction_change = on_selction_change
         self.treeview.bind('<ButtonRelease-1>', self._on_item_selected)
         if on_item_double_click:

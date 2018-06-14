@@ -29,6 +29,6 @@ class order_info(tk.LabelFrame):
 
     def update(self, order_info_data):
         self.min_order.set(str(order_info_data['MinAmount']))
-        self.mul_order.set(str(order_info_data['Mul']))
-        self.stock_lavel.set(str(order_info_data['Stock']))
+        self.mul_order.set(str(order_info_data['Multiples']))
+        self.stock_lavel.set(str(order_info_data['StockCount']))
 

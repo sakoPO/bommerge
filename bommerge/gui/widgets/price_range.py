@@ -22,6 +22,9 @@ class range_widget:
         self.amount_label.grid(kwargs, column=0)
         self.price_label.grid(kwargs, column=1)
 
+    def grid_forget(self):
+        self.amount_label.grid_forget()
+        self.price_label.grid_forget()
 
 class price_range(tk.LabelFrame):
     def __init__(self, parent, ranges):

@@ -111,17 +111,17 @@ def get_price(quantity, price_ranges):
     raise RuntimeError("Unable to match price range. Required quantity: " + str(quantity))
 
 def add_component_price(component):    
-    required_quantity = component['Quantity'] 
+    required_quantity = int(component['Quantity'])
     for distributor in component['Distributors']:
         for component in distributor['Components']:
             order_info = component['OrderInfo']            
             if required_quantity <= order_info['MinAmount']:
                 order_quantity = order_info['MinAmount']
             else:
-                mul = (required_quantity - order_info['MinAmount']) / order_info['Mul']
-                order_quantity = order_info['MinAmount'] + order_info['Mul'] * mul
+                mul = (required_quantity - int(order_info['MinAmount'])) / int(order_info['Multiples'])
+                order_quantity = int(order_info['MinAmount']) + int(order_info['Multiples']) * mul
                 if order_quantity < required_quantity:
-                    order_quantity = order_quantity + order_info['Mul']
+                    order_quantity = order_quantity + order_info['Multiples']
             component['Price'] = get_price(order_quantity, component['PriceRanges']) * order_quantity
             component['OrderQuantity'] = order_quantity
             
@@ -172,7 +172,7 @@ class SuppliersDetailsWidget(ttk.Frame):
         order_info = component['OrderInfo']
         if not quantity or quantity < order_info['MinAmount']:
             return False
-        if (quantity - order_info['MinAmount']) % order_info['Mul'] != 0:
+        if (quantity - order_info['MinAmount']) % order_info['Multiples'] != 0:
             return False
         return True
 

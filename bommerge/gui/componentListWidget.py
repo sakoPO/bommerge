@@ -16,6 +16,7 @@ class ScrolledComponentsList(ttk.Frame):
         :param kwargs: keyword arguments passed on to Listbox initializer
         """
         ttk.Frame.__init__(self, master)
+        self.dataGeter = {}
         self.treeview = ttk.Treeview(self, **kwargs)
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.treeview.yview)
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
@@ -40,6 +41,9 @@ class ScrolledComponentsList(ttk.Frame):
         self.treeview.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
         self.scrollbar.pack(side=tk.LEFT, fill=tk.Y)
 
+    def addDataGeter(self, geter):
+        self.dataGeter = geter
+
     def addColumns(self, columns):
         max_width = {'Quantity': 10*len('Quantity')}
         self.treeview['columns'] = columns
@@ -54,7 +58,10 @@ class ScrolledComponentsList(ttk.Frame):
     def addItem(self, item, component, tag=None):
         value = []
         for key in self.treeview['columns']:
-            value.append(component[key])
+            if key in self.dataGeter:
+                value.append(self.dataGeter[key](component))
+            else:
+                value.append(component[key])
         if tag:
             self.treeview.insert('', 'end', text=item, values=value, tags=tag)
         else:

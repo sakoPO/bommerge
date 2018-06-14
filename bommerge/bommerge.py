@@ -4,6 +4,13 @@ from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
 import os
 
+try:
+    import Tkinter as tk
+    import ttk
+except ImportError:
+    import tkinter as tk
+    from tkinter import ttk
+    
 
 def loadJsonFile(filename):
     import json
@@ -59,7 +66,79 @@ def getFilenameFromPath(path):
     return ntpath.basename(path)
 
 
-def mergeProject(project, workingDirectory):
+
+
+
+def find_component(components_group, group):
+    def to_string(case):
+        if case:
+            return case
+        return 'None'
+        
+    from distributor_connector import tme
+    config = loadJsonFile('config.json')     
+    token = str(config['Distributors']['TME']['token'])
+    app_secret =  str(config['Distributors']['TME']['app_secret'])
+    print app_secret[0]
+    shop = tme.TME(token, app_secret)
+    
+    for component in components_group:        
+        if 'Manufacturer Part Number' in component and component['Manufacturer Part Number'] != "":
+            print("Request for " + component['Manufacturer Part Number'])
+            found = shop.find_component(component['Manufacturer Part Number'])            
+        else:
+        #    print("Request for " + to_string(component['Capacitance']) + " " + to_string(component['Voltage']) + ' ' + to_string(component['Case']))
+            if group == "Capacitors":
+                found = shop.find_capacitor_by_parameters(component)
+            elif group == "Resistors":
+                found = shop.find_resistor_by_parameters(component)
+            elif group == "IntegratedCircuits":
+                found = shop.find_component(component['Comment'])
+            else:
+                found = None
+            #for component in found['Data']['ProductList']:
+            #    print(component['Symbol'] + " : " + component['OriginalSymbol'] + " : " + component['Producer'])
+            #if 'stockAndPrice' in found:
+            #    print(found['stockAndPrice'])
+
+        if "Distributors" not in component:
+            component["Distributors"] = []
+        if found:
+            print found            
+            component["Distributors"].append({"Name": "TME", "Components": found})
+
+def find_component_comment(components_group):
+    from distributor_connector import tme
+    
+    shop = tme.tme()
+    
+    for component in components_group:        
+        if 'Comment' in component and component['Comment'] != "":
+            print("Request for " + component['Comment'])
+            found = shop.find_component(component['Comment'])
+            if found:
+                print found
+               
+            #for component in found['Data']['ProductList']:
+            #    print(component['Symbol'] + " : " + component['OriginalSymbol'] + " : " + component['Producer'])
+            #if 'stockAndPrice' in found:
+            #    print(found['stockAndPrice'])
+            
+
+def ged_distributor_stock(merged):
+    for group in merged.keys():
+        find_component(merged[group], group)
+    #find_component(merged["Resistors"])
+    #find_component_comment(merged["IntegratedCircuits"])
+    
+        
+def saveFile(filename, content):
+    import json
+    with open(filename, 'w') as outfile:
+        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
+
+
+def mergeProject(project, workingDirectory, nogui):
     import os
     import automaticMerger
     import guiBOM as manual_merger
@@ -72,7 +151,18 @@ def mergeProject(project, workingDirectory):
 
     automergeOutputFile = os.path.join(directory, 'automerged.json')
     automaticMerger.merge(project, automergeOutputFile)
-    manual_merger.merge(automergeOutputFile)
+    if nogui == None:
+        manual_merger.merge(automergeOutputFile)
+
+    components = loadJsonFile(automergeOutputFile)
+    ged_distributor_stock(components)
+    filename = directory + '/order.json'
+    saveFile(filename, components)
+    
+    from gui import orderingDialog
+    root = tk.Tk()
+    orderingDialog.OrderWidget(root, filename)
+    root.mainloop()
 
     from exporters import csvExporter
     csvExporter.save(dict(loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
@@ -92,6 +182,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proj", help="Project definition file")
+    parser.add_argument("--nogui", help="Run bommerge without gui, only automatical merge will be performed.")
     args = parser.parse_args()
 
     project = None
@@ -106,7 +197,7 @@ def main():
             project = loadProject(projectConfigGui.result)
 
     if project:
-        mergeProject(project, workingDirectory)
+        mergeProject(project, workingDirectory, args.nogui)
 
 
 if __name__ == "__main__":

@@ -147,7 +147,7 @@ class SuppliersDetailsWidget(ttk.Frame):
     def create_order_quantity(self):
         from widgets.order_quantity import order_quantity
         self.order_quantity = order_quantity(self, self._on_quantity_change)
-        self.order_quantity.pack(anchor=tk.NW, padx=10, pady=10)
+        self.order_quantity.pack(anchor=tk.N + tk.W, padx=10, pady=10)
 
 
     def create_distributor_selector(self):
@@ -157,7 +157,7 @@ class SuppliersDetailsWidget(ttk.Frame):
         for distributor in self.components:
             distributors.append(distributor['Name'])
         self.distributor_selector.activate(distributors)
-        self.distributor_selector.pack(anchor=tk.N, expand=True, fill=tk.X)
+        self.distributor_selector.pack(anchor=tk.N + tk.W)
   
 
     def create_detail_view(self, distributor):

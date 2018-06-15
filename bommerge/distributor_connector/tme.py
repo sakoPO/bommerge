@@ -1,11 +1,21 @@
 from components import resistor
 import collections, urllib, base64, hmac, hashlib, urllib2, json
 
-def api_call(action, params, token, app_secret, show_header=False):
+
+
+def api_call(action, params, token, app_secret, show_header=False):   
+    def cmp_key (a,b):
+        if 'SymbolList[' in a[0] and 'SymbolList[' in b[0]:        
+            return cmp(int(a[0][11:len(a[0])-1]), int(b[0][11:len(b[0])-1]))
+        elif 'SearchParameter[' in a[0] and 'SearchParameter[' in b[0]:
+            return cmp(int(a[0][16:len(a[0])-4]), int(b[0][16:len(b[0])-4]))
+        else:
+            return cmp(a[0].lower(), b[0].lower())
+        
     api_url = 'https://api.tme.eu/' + action + '.json';
     params['Token'] = token;
 
-    params = collections.OrderedDict(sorted(params.items()));
+    params = collections.OrderedDict(sorted(params.items(), cmp=cmp_key))
     print params
     encoded_params = urllib.urlencode(params, '')
     
@@ -36,7 +46,6 @@ def api_call(action, params, token, app_secret, show_header=False):
     return html;
 ################################################################
 
-
 def show_found():
     found = find_component()
     
@@ -53,6 +62,11 @@ def decode_product_dictionary(product):
     response = {'Links': links, 'Description': description, 'Symbol': symbol, 'OrderInfo': order_info, 'Parameters': {'Manufacturer': manufacturer, 'Manufacturer Part Number': symbol['Symbol']}}
     return response
 
+
+def split_list(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
 
 class _api:
     def __init__(self, token, app_secret, language = 'EN', country = 'PL', currency = 'PLN'):
@@ -114,10 +128,12 @@ class _api:
 
 
     def get_parameters(self, components):
+        if len(components) > 50:
+            raise RuntimeError("Components count to big. get_parameters function can read parameters up to 50 components, requested " + str(len(components)))
         params = {
-            'Country': 'PL',
+            'Country': self.country,
             'Currency': 'PLN',
-            'Language': 'EN',
+            'Language': self.language,
         }
         result = self._encode_symbol_list(components)
         for key in result.keys():
@@ -128,11 +144,13 @@ class _api:
             return response['Data']['ProductList']
 
 
-    def get_prices_and_stocks(self, components):            
+    def get_prices_and_stocks(self, components):
+        if len(components) > 50:
+            raise RuntimeError("Components count to big. get_prices_and_stocks function can read stock data up to 50 components, requested " + str(len(components)))
         params = {         
-            'Country': 'PL',
+            'Country': self.country,
             'Currency': 'PLN',
-            'Language': 'PL',
+            'Language': self.language,
         }
         result = self._encode_symbol_list(components)
         for key in result.keys():
@@ -145,9 +163,11 @@ class _api:
 
 
     def get_products(self, components):
+        if len(components) > 50:
+            raise RuntimeError("Components count to big. get_products function can get up to 50 components, requested " + str(len(components)))        
         params = {
-            'Country': 'PL',          
-            'Language': 'EN'
+            'Country': self.country,          
+            'Language': self.language
         }        
         result = self._encode_symbol_list(components)
         for key in result.keys():
@@ -169,8 +189,8 @@ class _api:
 
     def get_symbols(self, category_id):
         params = {
-            'Country': 'PL',          
-            'Language': 'EN',
+            'Country': self.country,          
+            'Language': self.language,
             'CategoryId' : category_id
         }        
         response = self._api_call('Products/GetSymbols', params, True)
@@ -222,7 +242,7 @@ class _api:
         if on_stock and on_stock == True:
             params['SearchWithStock'] = 'True'
         if parameters:
-            print parameters
+            #print parameters
             for parameter in parameters:     
                 result = encode(parameter['id'], parameter['values'])
                 for key in result:
@@ -273,6 +293,7 @@ def get_case_id(case, parameters):
         if parameter['Name'] == 'Case - inch':
             for value in parameter['Values']:
                 if value['ValueName'] == case:
+                    print str(value['ValueName']) + " " + str(value['ValueId'])
                     return {'parameter_id': parameter['ParameterId'], 'value_ids': value['ValueId']}                    
   
 def get_dielectric_id(dielectric, parameters):
@@ -297,65 +318,93 @@ class TME:
                         return parameter['ParameterId'], value['ValueId']
 
 
-    def find_capacitor_by_parameters(self, capacitor):
-        from time import sleep
-   #     case_to_id = {'0201': '113537', '0402': '100568', '0603': '100558', '0805': '100559', '1206': '112338', '1210': '113185', '1812': '113186', '2020': '113187'}
+    def build_products_data(self, product_list):
+        def get_component_by_symbol(components, symbol):
+            for component in components:
+                if component['Symbol']['SymbolTME'] == symbol:                    
+                    return component
+            print("Unable to found component: " + symbol)
+                    
+        components = []
+        tme_symbols = []
+        for product in product_list:
+            part = decode_product_dictionary(product)            
+            tme_symbols.append(part['Symbol']['SymbolTME'])
+            components.append(part)
+
+        tme_symbols_chunks = list(split_list(tme_symbols, 50))
+
+        for tme_symbols in tme_symbols_chunks:
+            print('requesting stock and price: ' + str(tme_symbols))
+            stock = self.get_stock_and_prices(tme_symbols)
+            for stock_data in stock:
+                component = get_component_by_symbol(components, stock_data['Symbol'])
+                component['OrderInfo']['StockCount'] = stock_data['StockCount']
+                component['PriceRanges'] = stock_data['PriceList']
+
+        for tme_symbols in tme_symbols_chunks:
+            print('requesting parameters for components: ' + str(tme_symbols))
+            parameters = self.tme.get_parameters(tme_symbols)
+            for product in parameters:
+                component = get_component_by_symbol(components, product['Symbol'])
+                for parameter in product['ParameterList']:
+                    component['Parameters'][parameter['ParameterName']] = parameter["ParameterValue"]
+        return components
+
+    def _search(self, parameters, category):
+        try:           
+            result = self.tme.search(None, category=category, on_stock=True, parameters=parameters)
+        except:
+            print("exception during tme search")
+            return None
+        if result['Amount'] > len(result["ProductList"]):
+            pages_count = (result['Amount'] / 20) + 1 if (result['Amount'] % 20) != 0 else 0
+            print("Pages count: " + str(pages_count))
+            for page_number in range(2, pages_count + 1):
+                found = self.tme.search(None, category=category, on_stock=True, parameters=parameters, result_page=page_number)
+                result["ProductList"] = result["ProductList"] + found["ProductList"]
+            
+        return result
+
+
+    def find_capacitor_by_parameters(self, capacitor): 
+        def select_filters(parameters, part):
+            param = []
+            if parameters:
+                filters = get_capacitance_id(part['Capacitance'], parameters)
+                if filters:
+                    param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
+                if capacitor['Case']:
+                    filters = get_case_id(part['Case'], parameters)
+                    if filters:
+                        param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
+                if capacitor['Voltage']:
+                    parameterid, valueid = self.get_voltage_id(part['Voltage'], parameters)
+                    if parameterid:
+                        param.append({'id': parameterid, 'values': [valueid]})
+                if capacitor['Dielectric Type']:
+                    filters = get_dielectric_id(part['Dielectric Type'], parameters)
+                    if filters:
+                        param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
+            return param
+                
         capacitors_category_id = '26'
-   #     if capacitor['Case']:
-   #         case_id = case_to_id[capacitor['Case']]
-   #     else:
         case_id = capacitors_category_id
 
         parameters = self.tme.searchParameter(None, category=capacitors_category_id, on_stock=True)
-        param = []
-        if parameters:     
-            filters = get_capacitance_id(capacitor['Capacitance'], parameters)
-            if filters:
-                param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
-            if capacitor['Case']:
-                filters = get_case_id(capacitor['Case'], parameters)
-                if filters:
-                    param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
-            if capacitor['Voltage']:
-                parameterid, valueid = self.get_voltage_id(capacitor['Voltage'], parameters)
-                if parameterid:
-                    param.append({'id': parameterid, 'values': [valueid]})
-            if capacitor['Dielectric Type']:
-                filters = get_dielectric_id(capacitor['Dielectric Type'], parameters)
-                if filters:
-                    param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
-        
-        result = self.tme.search(None, category=capacitors_category_id, on_stock=True, parameters=param)
+        param = select_filters(parameters, capacitor)
+        result = self._search(param, capacitors_category_id)
         if result and len(result) != 0:
-            print("Found: " + str(result['Amount']))
-            tmp = []
-            for product in result['ProductList']:
-                part = decode_product_dictionary(product)
-
-                stock = self.get_stock_and_prices([part['Symbol']['SymbolTME']])
-                stock = stock[0]
-                part['OrderInfo']['StockCount'] = stock['StockCount']
-                part['PriceRanges'] = stock['PriceList']
-                
-                parameters = self.tme.get_parameters([part['Symbol']['SymbolTME']])
-                parameters = parameters[0]
-                for parameter in parameters['ParameterList']:
-                    print parameter
-                    part['Parameters'][parameter['ParameterName']] = parameter["ParameterValue"]
-
-                tmp.append(part)
-            return tmp
+            print("Found: " + str(result['Amount']) + ", len(result['ProductList']) = " + str(len(result['ProductList'])))
+            return self.build_products_data(result['ProductList'])
         else:
             print result
             
     def find_resistor_by_parameters(self, resistor):
-        from time import sleep
-        resistors_category_id = '100299'
-        case_id = resistors_category_id
-        
-        parameters = self.tme.searchParameter(None, category=resistors_category_id, on_stock=True)
-        param = []
-        if parameters:     
+        def select_filters(parameters, resistor):
+            if not parameters:
+                return []
+            param = []
             filters = get_resistance_id(resistor['Resistance'], parameters)
             if filters:
                 param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
@@ -363,44 +412,34 @@ class TME:
                 filters = get_case_id(resistor['Case'], parameters)
                 if filters:
                     param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
-       #     if resistor['Tolerance']:
-       #         parameterid, valueid = self.get_tolerance_id(resistor['Tolerance'], parameters)
-       #         if parameterid:
-       #             param.append({'id': parameterid, 'values': [valueid]})
-        try:           
-            result = self.tme.search(None, category=resistors_category_id, on_stock=True, parameters=param)
-        except:
-            result = None        
+            if resistor['Tolerance']:
+                filters = get_tolerance_id(resistor['Tolerance'], parameters)
+                if filters:
+                    param.append({'id': filters['parameter_id'], 'values': [filters['value_ids']]})
+            return param
+
+        resistors_category_id = '100299'
+        parameters = self.tme.searchParameter(None, category=resistors_category_id, on_stock=True)
+        param = select_filters(parameters, resistor)
+        result = self._search(param, resistors_category_id)
         if result and len(result) != 0:
-            print("Found: " + str(result['Amount']))
-            tmp = []
-            for product in result['ProductList']:
-                part = decode_product_dictionary(product)
-
-                stock = self.get_stock_and_prices([part['Symbol']['SymbolTME']])
-                stock = stock[0]
-                part['OrderInfo']['StockCount'] = stock['StockCount']
-                part['PriceRanges'] = stock['PriceList']
-                
-                parameters = self.tme.get_parameters([part['Symbol']['SymbolTME']])
-                parameters = parameters[0]
-                for parameter in parameters['ParameterList']:
-                    print parameter
-                    part['Parameters'][parameter['ParameterName']] = parameter["ParameterValue"]
-
-                tmp.append(part)
-            return tmp
+            print("Found: " + str(result['Amount']) + ", len(result['ProductList']) = " + str(len(result['ProductList'])))
+            return self.build_products_data(result['ProductList'])
         else:
             print result
 
 
     def find_component(self, components):
-        response = None#self.get_products(components)
+        response = None #self.get_products([components])
         if not response:
             response = self.search(components)
         if not response:
             return
         
+#        if response and len(response) != 0:
+   #         print("Found: " + str(response['Amount']) + ", len(result['ProductList']) = " + str(len(response)))
+   #         return self.build_products_data(result['ProductList'])
+            
         for part in response:
             stock = self.get_stock_and_prices([part['Symbol']['SymbolTME']])
             stock = stock[0]

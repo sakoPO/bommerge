@@ -66,33 +66,56 @@ def getFilenameFromPath(path):
     return ntpath.basename(path)
 
 
+def get_user_home_directory():
+    from os.path import expanduser
+    return expanduser("~")
+
+def file_exist(file_path):
+    import os
+    
+    if os.path.exists(getDirectory(file_path)) and os.path.isfile(file_path):
+        return True
+    return False
+
+def read_configuration():
+    user_dir = get_user_home_directory()
+    configuration_file = user_dir + '/.bommerge/configuration.json'
+    if file_exist(configuration_file):
+        configuration = loadJsonFile(configuration_file)
+        token = str(configuration['Distributors']['TME']['token'])
+        app_secret =  str(configuration['Distributors']['TME']['app_secret'])
+        tme_config = {'token': token, 'app_secret': app_secret}
+        return tme_config
+    else:
+        print("Unable to read bommerge configuration file. " + str(configuration_file))
 
 
-
-def find_component(components_group, group):
+def find_component(components_group, group, tme_config):
     def to_string(case):
         if case:
             return case
         return 'None'
         
     from distributor_connector import tme
-    config = loadJsonFile('config.json')     
-    token = str(config['Distributors']['TME']['token'])
-    app_secret =  str(config['Distributors']['TME']['app_secret'])
-    print app_secret[0]
-    shop = tme.TME(token, app_secret)
+#    config = loadJsonFile('config.json')     
+ #   token = str(config['Distributors']['TME']['token'])
+ #   app_secret =  str(config['Distributors']['TME']['app_secret'])
+ #   print app_secret[0]
+    shop = tme.TME(tme_config['token'], tme_config['app_secret'])
     
     for component in components_group:        
         if 'Manufacturer Part Number' in component and component['Manufacturer Part Number'] != "":
             print("Request for " + component['Manufacturer Part Number'])
             found = shop.find_component(component['Manufacturer Part Number'])            
-        else:
-        #    print("Request for " + to_string(component['Capacitance']) + " " + to_string(component['Voltage']) + ' ' + to_string(component['Case']))
+        else:        
             if group == "Capacitors":
+                print("Request for " + to_string(component['Capacitance']) + " " + to_string(component['Voltage']) + ' ' + to_string(component['Case']))
                 found = shop.find_capacitor_by_parameters(component)
             elif group == "Resistors":
+                print("Request for " + to_string(component['Resistance']) + ' ' + to_string(component['Case']) + ' ' + to_string(component['Tolerance']))
                 found = shop.find_resistor_by_parameters(component)
-            elif group == "IntegratedCircuits":
+            elif group in ["IntegratedCircuits"] and component['Comment'] != '':
+                print("Request for " + to_string(component['Comment']))
                 found = shop.find_component(component['Comment'])
             else:
                 found = None
@@ -104,10 +127,10 @@ def find_component(components_group, group):
         if "Distributors" not in component:
             component["Distributors"] = []
         if found:
-            print found            
+            #print found            
             component["Distributors"].append({"Name": "TME", "Components": found})
 
-def find_component_comment(components_group):
+def find_component_comment(components_group, tme_config):
     from distributor_connector import tme
     
     shop = tme.tme()
@@ -125,9 +148,9 @@ def find_component_comment(components_group):
             #    print(found['stockAndPrice'])
             
 
-def ged_distributor_stock(merged):
+def ged_distributor_stock(merged, tme_config):
     for group in merged.keys():
-        find_component(merged[group], group)
+        find_component(merged[group], group, tme_config)
     #find_component(merged["Resistors"])
     #find_component_comment(merged["IntegratedCircuits"])
     
@@ -155,7 +178,9 @@ def mergeProject(project, workingDirectory, nogui):
         manual_merger.merge(automergeOutputFile)
 
     components = loadJsonFile(automergeOutputFile)
-    ged_distributor_stock(components)
+    tme_config = read_configuration()
+    print(tme_config)
+    ged_distributor_stock(components, tme_config)
     filename = directory + '/order.json'
     saveFile(filename, components)
     

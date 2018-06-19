@@ -15,10 +15,10 @@ def unify_dictionary_keys(bom):
             for key in unified_keys:
                 dest_key = 'Value' if key in ['Capacitance', 'Inductance'] else key                
                 if key in component:                    
-                    if isinstance(component[key], basestring):
-                        unified_component[dest_key] = component[key].encode('ascii', 'replace')
-                    else:
-                        unified_component[dest_key] = component[key]
+                    #if isinstance(component[key], basestring):
+                    #    unified_component[dest_key] = component[key].encode('ascii', 'replace')
+                    #else:
+                    unified_component[dest_key] = component[key]
                 else:
                     unified_component[dest_key] = ''
             unified_bom.append(unified_component)

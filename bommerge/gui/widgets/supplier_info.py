@@ -25,7 +25,7 @@ class parameters(tk.LabelFrame):
             self._add_parameter()
 
         for i, parameter in enumerate(parameters):
-            self.variable[i].set(unicode(parameter) + ': ' + unicode(parameters[parameter]))
+            self.variable[i].set(parameter + ': ' + parameters[parameter])
 
         for i, label in enumerate(self.label):
             if i < len(parameters):

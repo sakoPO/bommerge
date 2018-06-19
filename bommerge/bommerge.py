@@ -140,7 +140,7 @@ def find_component_comment(components_group, tme_config):
             print("Request for " + component['Comment'])
             found = shop.find_component(component['Comment'])
             if found:
-                print found
+                print(found)
                
             #for component in found['Data']['ProductList']:
             #    print(component['Symbol'] + " : " + component['OriginalSymbol'] + " : " + component['Producer'])

@@ -170,9 +170,9 @@ class ManualMerger(ttk.Notebook):
             return keys
 
         def sort(x):
-            keys = {'Quantity': 1, 'Comment': 2, 'Description': 3, 'Manufacturer Part Number': 4, 'Manufacturer': 5}
-            if x in keys:
-                return keys[x]
+            keys_dict = {'Quantity': 1, 'Comment': 2, 'Description': 3, 'Manufacturer Part Number': 4, 'Manufacturer': 5}
+            if x in keys_dict:
+                return keys_dict[x]
             return 99
 
         keys = component
@@ -187,7 +187,7 @@ class ManualMerger(ttk.Notebook):
                 return key[x]
             return 99
 
-        components_group = self.components.keys()
+        components_group = list(self.components.keys())
         components_group.sort(key=sort)
         for group in components_group:
             if self.components[group]:
@@ -205,7 +205,7 @@ class ManualMerger(ttk.Notebook):
                     columns = self.create_component_columns(list(keys))
                     validator = None
                 else:
-                    columns = self.create_component_columns(self.components[group][0].keys())
+                    columns = self.create_component_columns(list(self.components[group][0].keys()))
                     validator = None
 
                 frame = ComponentGroup(self, group, columns, self.components[group], validator)

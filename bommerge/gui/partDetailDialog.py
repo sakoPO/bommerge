@@ -13,7 +13,7 @@ class PartDetailDialog(tk.Toplevel):
         self.parent = parent
         self.result = None
 
-        columns = self.sort_columns(component.keys())
+        columns = self.sort_columns(list(component.keys()))
         columns.remove('Designator')
         columns.remove('validation_status')
         

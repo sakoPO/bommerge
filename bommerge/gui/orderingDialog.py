@@ -1,4 +1,4 @@
-import componentListWidget as componentList
+import gui.componentListWidget as componentList
 try:
     import Tkinter as tk
     import ttk
@@ -12,6 +12,9 @@ def loadFile(filename):
         bom = json.load(inputFile)
     return bom
 
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 class ComponentGroup(ttk.Frame):
     def __init__(self, parent, name, columns, components, validator_function = None, on_selection=None):
@@ -107,7 +110,7 @@ def get_price(quantity, price_ranges):
     for price in reversed(price_ranges):
         if quantity >= price['Amount']:
             return price['Price']
-    print price_ranges
+    print(price_ranges)
     raise RuntimeError("Unable to match price range. Required quantity: " + str(quantity))
 
 def add_component_price(component):    
@@ -145,13 +148,13 @@ class SuppliersDetailsWidget(ttk.Frame):
 
 
     def create_order_quantity(self):
-        from widgets.order_quantity import order_quantity
+        from gui.widgets.order_quantity import order_quantity
         self.order_quantity = order_quantity(self, self._on_quantity_change)
         self.order_quantity.pack(anchor=tk.N + tk.W, padx=10, pady=10)
 
 
     def create_distributor_selector(self):
-        from widgets.distributor_selector import distributor_selector
+        from gui.widgets.distributor_selector import distributor_selector
         self.distributor_selector = distributor_selector(self, self._on_distributor_change)
         distributors = ['None']
         for distributor in self.components:
@@ -161,7 +164,7 @@ class SuppliersDetailsWidget(ttk.Frame):
   
 
     def create_detail_view(self, distributor):
-        from widgets.supplier_info import supplier_info as supplier_info
+        from gui.widgets.supplier_info import supplier_info as supplier_info
         supplier = supplier_info(self, distributor['Name'], distributor['Components'], self._on_change)
         supplier.pack(anchor=tk.N, expand=True, fill=tk.X, padx=5, pady=5, ipadx=5, ipady=5)
         self.supplier.append(supplier)
@@ -231,7 +234,7 @@ class Bookmark(ttk.Frame):
 
 
     def on_selection(self, index):
-        print index
+        print(index)
         self.active_component_index = index[0]
         for i, supplier_frame in enumerate(self.supplier_frame):
             if i == index[0]:
@@ -299,7 +302,7 @@ class OrderWidget(ttk.Notebook):
         return keys
 
     def on_selection(self, index):
-        print index
+        print(index)
         for i, supplier_frame in enumerate(self.supplier_frame["Capacitors"]):
             if i == index[0]:
                 supplier_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
@@ -315,7 +318,7 @@ class OrderWidget(ttk.Notebook):
                 return key[x]
             return 99
 
-        components_group = self.components.keys()
+        components_group = list(self.components.keys())
         components_group.sort(key=sort)
         for group in components_group:
             if self.components[group]:
@@ -333,7 +336,7 @@ class OrderWidget(ttk.Notebook):
                     columns_to_display = self.create_component_columns(list(keys))
                     validator = None
                 else:
-                    columns_to_display = self.create_component_columns(self.components[group][0].keys())                                     
+                    columns_to_display = self.create_component_columns(list(self.components[group][0].keys()))
                     validator = None                    
                 columns_to_display = self._remove_keys_if_exist(columns_to_display, ['Manufacturer', 'Description', 'Footprint', 'LibRef'])   
 

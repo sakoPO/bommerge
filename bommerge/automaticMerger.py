@@ -73,7 +73,11 @@ class ComponentContainer:
         return None
 
     def sort(self):
-        self.components = sorted(self.components, key=self.valueForCompare)
+        def key(value):
+            result = self.valueForCompare(value)
+            return result if result != None else 0
+            
+        self.components = sorted(self.components, key=key)
 
     def toList(self):
         return self.components

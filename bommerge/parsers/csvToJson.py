@@ -326,11 +326,11 @@ def decodeIntegratedCircuit(component):
     return ic
 
 def loadCSVFile(filename):    
-    with open(filename, 'r') as csvfile:
+    with open(filename, 'r', encoding='raw_unicode_escape') as csvfile:
         reader = csv.DictReader(csvfile)
         componentList = []
         for row in reader:
-            row = {k: unicode(v, errors='replace') for k,v in row.iteritems()}
+     #       row = {k: unicode(v, errors='replace') for k,v in row.iteritems()}
             componentList.append(row)
     return componentList
 

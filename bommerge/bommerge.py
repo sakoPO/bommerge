@@ -97,10 +97,6 @@ def find_component(components_group, group, tme_config):
         return 'None'
         
     from distributor_connector import tme
-#    config = loadJsonFile('config.json')     
- #   token = str(config['Distributors']['TME']['token'])
- #   app_secret =  str(config['Distributors']['TME']['app_secret'])
- #   print app_secret[0]
     shop = tme.TME(tme_config['token'], tme_config['app_secret'])
     
     for component in components_group:        
@@ -113,6 +109,10 @@ def find_component(components_group, group, tme_config):
                 found = shop.find_capacitor_by_parameters(component)
             elif group == "Resistors":
                 print("Request for " + to_string(component['Resistance']) + ' ' + to_string(component['Case']) + ' ' + to_string(component['Tolerance']))
+                if component['Resistance'] == None:
+                    print("Skipping...")
+                    component["Distributors"] = []
+                    continue
                 found = shop.find_resistor_by_parameters(component)
             elif group in ["IntegratedCircuits"] and component['Comment'] != '':
                 print("Request for " + to_string(component['Comment']))

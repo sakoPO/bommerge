@@ -1,5 +1,7 @@
 import csv
 import re
+from components import resistor
+from components import capacitor
 
 def convertMetricSMDToImperialSMD(caseCode):
     return False
@@ -103,46 +105,7 @@ def decodeCapacitor(component):
             match = re.search(r'(\d+([.,]\d+)?[ ]?(F|mF|uF|nF|pF|m|u|n|p))', fieldContent) # try to match 4.7F 4,7F 4.7nF etc.
             if match:
                 return match.group(1).replace(" ", "").replace(",", ".")
-    def faradsToString(farads):
-        mul = {'G': 1000000000,
-               'M': 1000000,
-               'k': 1000,
-               'U': 1,
-               'm': 0.001,
-               'u': 0.000001,
-               'n': 0.000000001,
-               'p': 0.000000000001,
-               'f': 0.000000000000001}
-        for key in mul.keys():
-            unit = mul[key]
-            if farads >= unit and farads <= 1000*unit:
-               if key == 'U':
-                   return str(farads).rstrip('0').rstrip('.') + 'F'
-               else:
-                   return str(farads / unit).rstrip('0').rstrip('.') + str(key) + 'F'
 
-    def normalizeCapacitance(capacitance):
-        import re    
-        mul = {'F': 1,
-               'mF': 0.001,
-               'm': 0.001,
-               'uF': 0.000001,
-               'u': 0.000001,
-               'nF': 0.000000001,
-               'n': 0.000000001,
-               'pF': 0.000000000001,
-               'p': 0.000000000001,
-               'fF': 0.000000000000001,
-               'f': 0.000000000000001}
-
-        if capacitance == None:
-           return None    
-        separatedCapacitance = re.split('(\d+)', capacitance)
-        if separatedCapacitance[-1] in mul:
-            multiplier = mul[separatedCapacitance[-1]]
-            value = float(capacitance[:-len(separatedCapacitance[-1])])
-            value = value * multiplier
-            return value   
 
     def getVoltage(component):
         import re
@@ -189,24 +152,24 @@ def decodeCapacitor(component):
 
 
 
-    capacitor = {}
-    capacitor['Capacitance'] = faradsToString(normalizeCapacitance(getCapacitance(component)))
-    capacitor['Voltage'] = getVoltage(component)
-    capacitor['Case'] = getCase(component)
-    capacitor['Manufacturer'] = getManufacturer(component)
-    capacitor['Manufacturer Part Number'] = getManufacturerPartNumber(component)
-    capacitor['Dielectric Type'] = getDielectricType(component)
-    capacitor['Quantity'] = getQuantity(component)
-    capacitor['Designator'] = component['Designator']
-    capacitor['Tolerance'] = getTolerance(component)
-    return capacitor
+    part = {}
+    part['Capacitance'] = capacitor.farads_to_string(capacitor.convert_capacitance_co_farads(getCapacitance(component)))
+    part['Voltage'] = getVoltage(component)
+    part['Case'] = getCase(component)
+    part['Manufacturer'] = getManufacturer(component)
+    part['Manufacturer Part Number'] = getManufacturerPartNumber(component)
+    part['Dielectric Type'] = getDielectricType(component)
+    part['Quantity'] = getQuantity(component)
+    part['Designator'] = component['Designator']
+    part['Tolerance'] = getTolerance(component)
+    return part
   
 def decodeResistor(component):
     def getResistance(component):
         for field in ['Resistance', 'resistance']:
             if field in component:
                 if component[field] != '':
-                    return component[field].replace(" ", "").replace(",", ".")
+                    return component[field].replace(" ", "").replace(",", ".").replace('?', 'R')
 
         for field in ['Comment', 'Description']:
             fieldContent = component[field].replace(",", ".")
@@ -219,34 +182,9 @@ def decodeResistor(component):
             match = re.search(r'(\d+(\.\d+)? ?((m|k|M|G)?(O|o)hm))',fieldContent)
             if match:
                 if match.group(4) != "":
-                    return match.group(1).replace(" ", "").replace(",", ".").replace("Ohm", "").replace("ohm", "")
+                    return match.group(1).replace(" ", "").replace(",", ".").replace("Ohm", "").replace("ohm", "").replace('?', 'R')
                 else:
-                    return match.group(1).replace(" ", "").replace(",", ".").replace("Ohm", "R").replace("ohm", "R")
-
-    def resistanceToOhms(resistance):
-        import re    
-        mul = {'G': 1000000000,
-               'M': 1000000,
-               'k': 1000,
-               'R': 1,
-               'm': 0.001,
-               'u': 0.000001}
-
-        if resistance == None:
-            return None
-        separated = re.split('(\d+)', resistance)
-        if separated[-1] in mul:
-            multiplier = mul[separated[-1]]
-            value = float(resistance[:-len(separated[-1])])
-            value = value * multiplier
-            return value
-        else:
-            for i, chunk in enumerate(separated):
-                if chunk in mul:
-                   multiplier = mul[chunk]
-                   resistance = float(resistance[:i-1] + '.' + resistance[i:])
-                   resistance = resistance * multiplier
-                   return resistance
+                    return match.group(1).replace(" ", "").replace(",", ".").replace("Ohm", "R").replace("ohm", "R").replace('?', 'R')
 
     def getManufacturer(component):
         manufacturerList = ['Vishay', 'AVX', 'Kemet']
@@ -267,15 +205,15 @@ def decodeResistor(component):
                             return word
         return ''
                  
-    resistor = {}
-    resistor['Resistance'] = getResistance(component)
-    resistor['Tolerance'] = getTolerance(component)
-    resistor['Case'] = getCase(component)
-    resistor['Manufacturer'] = getManufacturer(component)
-    resistor['Manufacturer Part Number'] = getManufacturerPartNumber(component)
-    resistor['Quantity'] = getQuantity(component)
-    resistor['Designator'] = component['Designator']
-    return resistor
+    part = {}
+    part['Resistance'] = resistor.ohms_to_string(resistor.convert_resistance_to_ohms(getResistance(component)))
+    part['Tolerance'] = getTolerance(component)
+    part['Case'] = getCase(component)
+    part['Manufacturer'] = getManufacturer(component)
+    part['Manufacturer Part Number'] = getManufacturerPartNumber(component)
+    part['Quantity'] = getQuantity(component)
+    part['Designator'] = component['Designator']
+    return part
 
 def decodeConnector(component):
     def getManufacturerPartNumber(component):

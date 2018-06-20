@@ -40,8 +40,8 @@ def get_resistance_id(resistance, parameters):
     for parameter in parameters:
         if parameter['Name'] == 'Resistance':
             for value in parameter['Values']:
-                param = resistor.convertResistanceToOhms(value['ValueName'])
-                expected = resistor.convertResistanceToOhms(resistance)
+                param = resistor.convert_resistance_to_ohms(value['ValueName'])
+                expected = resistor.convert_resistance_to_ohms(resistance)
                 if param == None or expected == None:
                     print(value['ValueName'])
                     print(resistance)

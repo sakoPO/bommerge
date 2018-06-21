@@ -3,19 +3,13 @@ from gui import mergeDialog as mergeDialog
 from gui import partDetailDialog as partDetailDialog
 from components import capacitor
 from components import resistor
+from utils import files
 try:
     import Tkinter as tk
     import ttk
 except ImportError:
     import tkinter as tk
     from tkinter import ttk
-
-
-def loadFile(filename):
-    import json
-    with open(filename) as inputFile:
-        bom = json.load(inputFile)
-    return bom
 
 
 def validate(part, partname_resolver, required_fields, fields_to_check):
@@ -159,7 +153,7 @@ class ComponentGroup(ttk.Frame):
 class ManualMerger(ttk.Notebook):
     def __init__(self, parent, filename):
         ttk.Notebook.__init__(self, parent)
-        self.components = loadFile(filename)
+        self.components = files.loadJsonFile(filename)
         self.create_bookmarks()
         self.pack(expand=True, fill=tk.BOTH)
 

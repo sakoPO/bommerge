@@ -1,4 +1,5 @@
 import gui.componentListWidget as componentList
+from utils import files
 try:
     import Tkinter as tk
     import ttk
@@ -6,11 +7,11 @@ except ImportError:
     import tkinter as tk
     from tkinter import ttk
     
-def loadFile(filename):
-    import json
-    with open(filename) as inputFile:
-        bom = json.load(inputFile)
-    return bom
+#def loadFile(filename):
+#    import json
+#    with open(filename) as inputFile:
+#        bom = json.load(inputFile)
+#    return bom
 
 
 def cmp(a, b):
@@ -254,7 +255,7 @@ class Bookmark(ttk.Frame):
 class OrderWidget(ttk.Notebook):
     def __init__(self, parent, filename):
         ttk.Notebook.__init__(self, parent)
-        self.components = loadFile(filename)
+        self.components = files.load_json_file(filename)
         for group in self.components.keys():
             for component in self.components[group]:
                 add_component_price(component)

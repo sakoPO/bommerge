@@ -2,6 +2,7 @@
 
 from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
+from utils import files
 import os
 
 try:
@@ -12,15 +13,8 @@ except ImportError:
     from tkinter import ttk
     
 
-def loadJsonFile(filename):
-    import json
-    with open(filename) as inputfile:
-       dictionary = json.load(inputfile)
-    return dictionary
-
-
 def loadProject(filename):
-    project = loadJsonFile(filename)
+    project = files.loadJsonFile(filename)
     project_directory = getDirectory(filename)
     print("Loading project: " + project_directory)
     for file in project:
@@ -31,17 +25,17 @@ def loadProject(filename):
 
 
 def saveProject(filename, project):
-    def save_json_file(filename, dictionary):
-        import json
-        with open(filename, 'w') as outputfile:
-            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': ')))
+#    def save_json_file(filename, dictionary):
+#        import json
+#        with open(filename, 'w') as outputfile:
+#            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': ')))
 
     project_directory = getDirectory(filename)
     for file in project:
         normalized_path = os.path.normpath(file['filename'])
         print(normalized_path)
         file['filename'] = os.path.relpath(normalized_path, project_directory)
-    save_json_file(filename, project)
+    files.save_json_file(filename, project)
 
 
 def parseCSVfiles(files, destynation):
@@ -81,7 +75,7 @@ def read_configuration():
     user_dir = get_user_home_directory()
     configuration_file = user_dir + '/.bommerge/configuration.json'
     if file_exist(configuration_file):
-        configuration = loadJsonFile(configuration_file)
+        configuration = files.loadJsonFile(configuration_file)
         token = str(configuration['Distributors']['TME']['token'])
         app_secret =  str(configuration['Distributors']['TME']['app_secret'])
         tme_config = {'token': token, 'app_secret': app_secret}
@@ -155,10 +149,10 @@ def ged_distributor_stock(merged, tme_config):
     #find_component_comment(merged["IntegratedCircuits"])
     
         
-def saveFile(filename, content):
-    import json
-    with open(filename, 'w') as outfile:
-        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
+#def saveFile(filename, content):
+#    import json
+#    with open(filename, 'w') as outfile:
+#        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
 
 
 def mergeProject(project, workingDirectory, nogui):
@@ -177,12 +171,13 @@ def mergeProject(project, workingDirectory, nogui):
     if nogui == None:
         manual_merger.merge(automergeOutputFile)
 
-    components = loadJsonFile(automergeOutputFile)
+    components = files.loadJsonFile(automergeOutputFile)
     tme_config = read_configuration()
     print(tme_config)
     ged_distributor_stock(components, tme_config)
     filename = directory + '/order.json'
-    saveFile(filename, components)
+    files.save_json_file(filename, components)
+#    saveFile(filename, components)
     
     from gui import orderingDialog
     root = tk.Tk()
@@ -190,7 +185,7 @@ def mergeProject(project, workingDirectory, nogui):
     root.mainloop()
 
     from exporters import csvExporter
-    csvExporter.save(dict(loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
+    csvExporter.save(dict(files.loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
 
 
 class ProjectConfigWidget(ProjectConfigurationWidget):

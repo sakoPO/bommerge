@@ -1,32 +1,11 @@
 import re
-
-
-def faradsToString(farads):
-    mul = {'G': 1000000000,
-           'M': 1000000,
-           'k': 1000,
-           'U': 1,
-           'm': 0.001,
-           'u': 0.000001,
-           'n': 0.000000001,
-           'p': 0.000000000001,
-           'f': 0.000000000000001}
-    for key in mul.keys():
-        unit = mul[key]
-        if farads >= unit and farads <= 1000*unit:
-           if key == 'U':
-               return str(farads).rstrip('0').rstrip('.') + 'F'
-           else:
-               return str(farads / unit).rstrip('0').rstrip('.') + str(key) + 'F'
+from components import capacitor
+from decimal import *
 
 def capacitanceStringToFarads(string):
-    value = int(string[:2])    
-    mul = int(string[2])
-#    print "value:" + str(value) + ' mul: ' + str(mul)
-    return value * 10**mul * 10**-12
-    
-    
-
+    value = Decimal(string[:2])    
+    mul = Decimal(string[2])
+    return value * Decimal('10')**mul * Decimal('10')**Decimal('-12')
 
 
 def murata(partname):
@@ -39,16 +18,16 @@ def murata(partname):
     match_GCM_GCJ_series = re.match(r'(GC(J|M))(03|15|18|21|31|32|43|55)(3|5|6|8|9|A|B|C|D|E|M|N|Q|R|X)(5C|7U|C7|R7)(0J|1A|1C|1E|YA|1H|2A|2E|2J)(R\d\d|\dR\d|\d{3}|)(C|D|J|K|M)(.{3})(L|D|K|J|B|C)', partname)
     if match_GCM_GCJ_series:
         match = match_GCM_GCJ_series
-        capacitor = {}
-        capacitor['series'] = match.group(1)
-        capacitor['Case'] = dimension[match.group(3)]
-        capacitor['height'] = height[match.group(4)]
-        capacitor['Dielectric Type'] = dielectric_type[match.group(5)]
-        capacitor['Voltage'] = voltage[match.group(6)]
-        capacitor['Capacitance'] = faradsToString(capacitanceStringToFarads(match.group(7)))
-        capacitor['Tolerance'] = tolerance[match.group(8)]
-        capacitor['Manufacturer'] = 'Murata'
-        return capacitor
+        component = {}
+        component['Series'] = match.group(1)
+        component['Case'] = dimension[match.group(3)]
+        component['Height'] = height[match.group(4)]
+        component['Dielectric Type'] = dielectric_type[match.group(5)]
+        component['Voltage'] = voltage[match.group(6)]
+        component['Capacitance'] = capacitor.farads_to_string(capacitanceStringToFarads(match.group(7)))
+        component['Tolerance'] = tolerance[match.group(8)]
+        component['Manufacturer'] = 'Murata'
+        return component
 
 def kemet(partname):
     voltage = {'9': '6.3V', '8': '10V', '4': '16V', '3': '25V', '6': '35V', '5': '50V', '1': '100V', '2': '200V', 'A': '250V'}
@@ -58,36 +37,36 @@ def kemet(partname):
     if match:
         print ('Capacitor mached: ' + partname)
         def capacitanceStringToFarads_kamet(string):
-            value = int(string[:2])    
-            mul = int(string[2])
-            if mul == 8:
-                return value / 100 * 10**-12
-            if mul == 9:
-                return value / 10 * 10**-12
-            return value * 10**mul * 10**-12
+            value = Decimal(string[:2])    
+            mul = Decimal(string[2])
+            if mul == Decimal(8):
+                return value / Decimal(100) * Decimal(10**-12)
+            if mul == Decimal(9):
+                return value / Decimal(10) * Decimal(10**-12)
+            return value * Decimal('10')**mul * Decimal('10')**Decimal('-12')
     
-        capacitor = {}
-        capacitor['series'] = 'C - Standard'
-        capacitor['Case'] = match.group(2)
-        capacitor['Dielectric Type'] = 'C0G'
-        capacitor['Voltage'] = voltage[match.group(6)]
-        capacitor['Capacitance'] = faradsToString(capacitanceStringToFarads_kamet(match.group(4)))
-        capacitor['Tolerance'] = tolerance[match.group(5)]
-        capacitor['Manufacturer'] = 'Kemet'
-        return capacitor
+        component = {}
+        component['series'] = 'C - Standard'
+        component['Case'] = match.group(2)
+        component['Dielectric Type'] = 'C0G'
+        component['Voltage'] = voltage[match.group(6)]
+        component['Capacitance'] = capacitor.farads_to_string(capacitanceStringToFarads_kamet(match.group(4)))
+        component['Tolerance'] = tolerance[match.group(5)]
+        component['Manufacturer'] = 'Kemet'
+        return component
         
     match = re.match(r'(C)(0201|0402|0603|0805|1206|1210|1808|1812|1825|2220|2225)(C)(\d{3})(J|K|M)(9|8|4|3|6|5|1|2|A)(R)', partname)
     if match:
         print ('Capacitor mached: ' + partname)
-        capacitor = {}
-        capacitor['series'] = 'C - Standard'
-        capacitor['Case'] = match.group(2)
-        capacitor['Dielectric Type'] = 'X7R'
-        capacitor['Voltage'] = voltage[match.group(6)]
-        capacitor['Capacitance'] = faradsToString(capacitanceStringToFarads(match.group(4)))
-        capacitor['Tolerance'] = tolerance[match.group(5)]
-        capacitor['Manufacturer'] = 'Kemet'
-        return capacitor   
+        component = {}
+        component['series'] = 'C - Standard'
+        component['Case'] = match.group(2)
+        component['Dielectric Type'] = 'X7R'
+        component['Voltage'] = voltage[match.group(6)]
+        component['Capacitance'] = capacitor.farads_to_string(capacitanceStringToFarads(match.group(4)))
+        component['Tolerance'] = tolerance[match.group(5)]
+        component['Manufacturer'] = 'Kemet'
+        return component   
 
         
         

@@ -3,7 +3,7 @@ import capacitor
 from decimal import *
 
 
-class TestResistor(unittest.TestCase):
+class TestCapacitor(unittest.TestCase):
     def test_conversion_str_to_decimal(self):
         self.assertEqual(capacitor.convert_capacitance_co_farads('1fF'), Decimal('0.000000000000001'))
 

@@ -1,4 +1,4 @@
-def loadJsonFile(filename):
+def load_json_file(filename):
     import json
     with open(filename) as inputfile:
        dictionary = json.load(inputfile)

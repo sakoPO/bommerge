@@ -153,7 +153,7 @@ class ComponentGroup(ttk.Frame):
 class ManualMerger(ttk.Notebook):
     def __init__(self, parent, filename):
         ttk.Notebook.__init__(self, parent)
-        self.components = files.loadJsonFile(filename)
+        self.components = files.load_json_file(filename)
         self.create_bookmarks()
         self.pack(expand=True, fill=tk.BOTH)
 

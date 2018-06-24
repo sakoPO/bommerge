@@ -14,7 +14,7 @@ except ImportError:
     
 
 def loadProject(filename):
-    project = files.loadJsonFile(filename)
+    project = files.load_json_file(filename)
     project_directory = getDirectory(filename)
     print("Loading project: " + project_directory)
     for file in project:
@@ -75,7 +75,7 @@ def read_configuration():
     user_dir = get_user_home_directory()
     configuration_file = user_dir + '/.bommerge/configuration.json'
     if file_exist(configuration_file):
-        configuration = files.loadJsonFile(configuration_file)
+        configuration = files.load_json_file(configuration_file)
         token = str(configuration['Distributors']['TME']['token'])
         app_secret =  str(configuration['Distributors']['TME']['app_secret'])
         tme_config = {'token': token, 'app_secret': app_secret}
@@ -171,7 +171,7 @@ def mergeProject(project, workingDirectory, nogui):
     if nogui == None:
         manual_merger.merge(automergeOutputFile)
 
-    components = files.loadJsonFile(automergeOutputFile)
+    components = files.load_json_file(automergeOutputFile)
     tme_config = read_configuration()
     print(tme_config)
     ged_distributor_stock(components, tme_config)
@@ -185,7 +185,7 @@ def mergeProject(project, workingDirectory, nogui):
     root.mainloop()
 
     from exporters import csvExporter
-    csvExporter.save(dict(files.loadJsonFile(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
+    csvExporter.save(dict(files.load_json_file(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
 
 
 class ProjectConfigWidget(ProjectConfigurationWidget):

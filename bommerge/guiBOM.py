@@ -22,7 +22,22 @@ def validate(part, partname_resolver, required_fields, fields_to_check):
     def validateParameters(part, resolved):
         for field in fields_to_check:
             if field in resolved:
-                if part[field] != resolved[field]:
+                if field in ['Capacitance']:
+                    if capacitor.convert_capacitance_co_farads(part[field]) != capacitor.convert_capacitance_co_farads(resolved[field]):
+                        print(resolved)
+                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
+                        return False
+                elif field in ['Resistance']:
+                    if resistor.convert_resistance_to_ohms(part[field]) != resistor.convert_resistance_to_ohms(resolved[field]):
+                        print(resolved)
+                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
+                        return False
+                elif field in ['Voltage']:
+                    if part[field].replace('VDC', 'V') != resolved[field].replace('VDC', 'V'):
+                        print(resolved)
+                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
+                        return False
+                elif part[field] != resolved[field]:
                     print(resolved)
                     print(str(field))
                     return False
@@ -94,16 +109,31 @@ class ComponentGroup(ttk.Frame):
                                                            selectmode=tk.EXTENDED)
         self.widget.addColumns(columns)
         self.widget.pack(expand=True, fill=tk.BOTH)
-        self.button = tk.Button(self, text='Merge', width=25, command=self.on_merge_button_pressed)
+        self.button_frame = ttk.Frame(self)
+        self.button = tk.Button(self.button_frame, text='Merge', command=self.on_merge_button_pressed)
         self.button.config(state=tk.DISABLED)
-        self.button.pack()
-
+        self.button.pack(side=tk.LEFT)
+        self.order_button = tk.Button(self.button_frame, text='Start Ordering')
+        self.order_button.pack(side=tk.LEFT)
+        self.cancel_button = tk.Button(self.button_frame, text='Cancel')
+        self.cancel_button.pack(side=tk.LEFT)
+        self.button_frame.pack()
 
     def sort(self):
+        def resistors_key(x):
+            if x['Resistance'] != None:
+                return resistor.convert_resistance_to_ohms(x['Resistance'])
+            return 0
+
+        def capacitors_key(x):
+            if x['Capacitance'] != None:
+                return capacitor.convert_capacitance_co_farads(x['Capacitance'])
+            return 0
+
         if self.name == 'Capacitors':
-            self.components.sort(key=lambda x: capacitor.convertCapacitanceToFarads(x['Capacitance']))
+            self.components.sort(key=capacitors_key)
         elif self.name == 'Resistors':
-            self.components.sort(key=lambda x: resistor.convertResistanceToOhms(x['Resistance']))
+            self.components.sort(key=resistors_key)
         else:
             self.components.sort()
 
@@ -211,4 +241,5 @@ def merge(filename):
     root.title("BOM Merger")
     manualMerger = ManualMerger(root, filename)
     root.mainloop()
+    return manualMerger.components
 

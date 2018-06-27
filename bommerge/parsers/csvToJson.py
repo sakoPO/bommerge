@@ -2,6 +2,7 @@ import csv
 import re
 from components import resistor
 from components import capacitor
+from utils import files
 
 def convertMetricSMDToImperialSMD(caseCode):
     return False
@@ -272,12 +273,6 @@ def loadCSVFile(filename):
             componentList.append(row)
     return componentList
 
-def saveJsonFile(filename, content):
-    print("saving: " + filename)
-    import json
-    with open(filename, 'w') as outfile:
-        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
-
 def removeEmptyFields(component):
     newComponent = {}
     for key in component.keys():
@@ -308,13 +303,6 @@ def process(components):
 
     return {'Capacitors': capacitors, 'Resistors': resistors, 'Inductors': inductors, 'IntegratedCircuits': integratedCircuits, 'Connectors': connectors, 'Others': others, 'originalFileContent': components}
 
-def getFilenameFromPath(path):
-    import ntpath
-    return ntpath.basename(path)
-
-def replaceFileExtension(filename, newExtension):
-    import os
-    return os.path.splitext(filename)[0] + newExtension
 
 def convert(filename, outputdir):
     print("Converting CSV: " + filename + ", result will be stored in: " + outputdir)
@@ -322,7 +310,7 @@ def convert(filename, outputdir):
     components = loadCSVFile(filename)
     fileContent = process(components)
     fileContent['filename'] = filename
-    outputFile = replaceFileExtension(getFilenameFromPath(filename), '.json')
+    outputFile = files.replace_file_extension(files.get_filename_from_path(filename), '.json')
     outputFile = os.path.join(outputdir, outputFile)
-    saveJsonFile(outputFile, fileContent)
+    files.save_json_file(outputFile, fileContent)
 

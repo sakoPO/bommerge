@@ -360,7 +360,7 @@ class OrderWidget(ttk.Frame):
         self.done_button = tk.Button(self.buttons_frame, text='Done', command=self.done)
         self.cancel_button.pack(side=tk.RIGHT)
         self.done_button.pack(side=tk.RIGHT)
-        self.buttons_frame.pack()
+        self.buttons_frame.pack(side=tk.BOTTOM)
         self.result = None
 
 

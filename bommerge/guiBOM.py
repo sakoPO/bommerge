@@ -113,9 +113,9 @@ class ComponentGroup(ttk.Frame):
         self.button = tk.Button(self.button_frame, text='Merge', command=self.on_merge_button_pressed)
         self.button.config(state=tk.DISABLED)
         self.button.pack(side=tk.LEFT)
-        self.order_button = tk.Button(self.button_frame, text='Start Ordering')
+        self.order_button = tk.Button(self.button_frame, text='Start Ordering', command=self.parent.start_order)
         self.order_button.pack(side=tk.LEFT)
-        self.cancel_button = tk.Button(self.button_frame, text='Cancel')
+        self.cancel_button = tk.Button(self.button_frame, text='Cancel', command=self.parent.cancel)
         self.cancel_button.pack(side=tk.LEFT)
         self.button_frame.pack()
 
@@ -181,11 +181,20 @@ class ComponentGroup(ttk.Frame):
 
 
 class ManualMerger(ttk.Notebook):
-    def __init__(self, parent, filename):
+    def __init__(self, parent, components):        
         ttk.Notebook.__init__(self, parent)
-        self.components = files.load_json_file(filename)
+        self.parent = parent
+        self.components = components
+        self.result = None
         self.create_bookmarks()
         self.pack(expand=True, fill=tk.BOTH)
+
+    def cancel(self):
+        self.parent.destroy()
+
+    def start_order(self):
+        self.result = True
+        self.parent.destroy()
 
     def create_component_columns(self, component):
         def remove_key(key):
@@ -239,7 +248,9 @@ class ManualMerger(ttk.Notebook):
 def merge(filename):
     root = tk.Tk()
     root.title("BOM Merger")
-    manualMerger = ManualMerger(root, filename)
+    components = files.load_json_file(filename)
+    manualMerger = ManualMerger(root, components)
     root.mainloop()
-    return manualMerger.components
+    if manualMerger.result:
+        return manualMerger.components
 

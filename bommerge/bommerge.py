@@ -120,7 +120,7 @@ def parse_files_if_needed(project_file_list, destynation):
     for f in project_file_list:
         file_path = f['filename']
         if files.get_file_extension(file_path) == '.json':
-            files.copy(f, destynation + '/' + files.get_filename_from_path(file_path))
+            files.copy(file_path, destynation + '/' + files.get_filename_from_path(file_path))
         else:
             csvToJson.convert(file_path, destynation)
 
@@ -142,29 +142,30 @@ def mergeProject(project, workingDirectory, nogui):
     components = files.load_json_file(automergeOutputFile)
     if nogui == None:
         components = manual_merger.merge(automergeOutputFile)
+
+    if components:  
+        from exporters import csvExporter    
+        csvExporter.save(dict(components), os.path.join(workingDirectory, "mergedBOM.csv"))
         
-    from exporters import csvExporter    
-    csvExporter.save(dict(components), os.path.join(workingDirectory, "mergedBOM.csv"))
-    
-    tme_config = read_configuration()
-    print(tme_config)
-    ged_distributor_stock(components, tme_config)
-    filename = directory + '/merged.json'
-    files.save_json_file(filename, components)
-    
-    from gui import orderingDialog
-    root = tk.Tk()
-    orderingWidget = orderingDialog.OrderWidget(root, filename)
-    root.mainloop()
-    filename = directory + '/order.json'
-    files.save_json_file(filename, orderingWidget.components)
-    if orderingWidget.result:
-        for supplier in orderingWidget.result.keys():
-            csvExporter.save_list(orderingWidget.result[supplier], workingDirectory + '/' + supplier + '_human_readable.csv')    
-            order_list = []
-            for component in  orderingWidget.result[supplier]:
-                order_list.append({'Part number': component['Shop Part Number'], 'Quantity' : component['Quantity']})
-            csvExporter.save_list(order_list, workingDirectory + '/' + supplier + '.csv', write_header=False)
+        tme_config = read_configuration()
+        print(tme_config)
+        ged_distributor_stock(components, tme_config)
+        filename = directory + '/merged.json'
+        files.save_json_file(filename, components)
+        
+        from gui import orderingDialog
+        root = tk.Tk()
+        orderingWidget = orderingDialog.OrderWidget(root, filename)
+        root.mainloop()
+        filename = directory + '/order.json'
+        files.save_json_file(filename, orderingWidget.components)
+        if orderingWidget.result:
+            for supplier in orderingWidget.result.keys():
+                csvExporter.save_list(orderingWidget.result[supplier], workingDirectory + '/' + supplier + '_human_readable.csv')    
+                order_list = []
+                for component in  orderingWidget.result[supplier]:
+                    order_list.append({'Part number': component['Shop Part Number'], 'Quantity' : component['Quantity']})
+                csvExporter.save_list(order_list, workingDirectory + '/' + supplier + '.csv', write_header=False)
 
 
 class ProjectConfigWidget(ProjectConfigurationWidget):

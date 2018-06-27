@@ -20,7 +20,7 @@ class MergeDialog(tk.Toplevel):
         merged = self.mergeFields(components)
         mergeFields = self._createMergeFields(columns, merged)
         self._createButtons(mergeFields, merged)
-        
+        self.update_idletasks()
         self.protocol("WM_DELETE_WINDOW", self.cancel)        
         self.wait_window(self)
 

@@ -1,0 +1,10 @@
+[
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_AK8975.csv"
+    },
+    {
+        "Quantity": 1,
+        "filename": "BOM_PartType-UHAL_AK8975_SPI.csv"
+    }
+]

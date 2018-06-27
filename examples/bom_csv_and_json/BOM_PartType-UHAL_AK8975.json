@@ -1,0 +1,125 @@
+{
+    "Capacitors": [
+        {
+            "Capacitance": "10uF",
+            "Case": "0603",
+            "Designator": "C1",
+            "Dielectric Type": "X7R",
+            "Manufacturer": "",
+            "Manufacturer Part Number": "",
+            "Quantity": "1",
+            "Tolerance": "10%",
+            "Voltage": "16V"
+        },
+        {
+            "Capacitance": "100nF",
+            "Case": "0603",
+            "Designator": "C2, C3",
+            "Dielectric Type": "X7R",
+            "Manufacturer": "Murata",
+            "Manufacturer Part Number": "GCM188R71H104KA57D",
+            "Quantity": "2",
+            "Tolerance": "10%",
+            "Voltage": "50V"
+        }
+    ],
+    "Connectors": [
+        {
+            "Comment": "uHAL_connector_reduced",
+            "Description": "connector for uHAL with reduced pin number",
+            "Designator": "J1",
+            "Manufacturer": "",
+            "Manufacturer Part Number": "",
+            "Quantity": "1"
+        }
+    ],
+    "Inductors": [],
+    "IntegratedCircuits": [
+        {
+            "Comment": "AK8975BP-L",
+            "Description": "3-axis Electronic Compass",
+            "Designator": "U1",
+            "Manufacturer": "Asahi Kasei",
+            "Manufacturer Part Number": "",
+            "Quantity": "1"
+        }
+    ],
+    "Others": [],
+    "Resistors": [
+        {
+            "Case": "0603",
+            "Designator": "R1, R2, R5, R6",
+            "Manufacturer": "",
+            "Manufacturer Part Number": "",
+            "Quantity": "4",
+            "Resistance": "10k\u03a9",
+            "Tolerance": null
+        },
+        {
+            "Case": "0603",
+            "Designator": "R3, R4",
+            "Manufacturer": "",
+            "Manufacturer Part Number": "",
+            "Quantity": "2",
+            "Resistance": "4.7k\u03a9",
+            "Tolerance": null
+        }
+    ],
+    "filename": "/home/pawel/git/bommerge/examples/correct_bom_files/BOM_PartType-UHAL_AK8975.csv",
+    "originalFileContent": [
+        {
+            "Capacitance": "10uF",
+            "Comment": "",
+            "Description": "CAP CER 10UF 16V 10% X7R 0603",
+            "Designator": "C1",
+            "Footprint": "CAPC1608X90X35ML10T15",
+            "LibRef": "CMP-119667-3",
+            "Quantity": "1"
+        },
+        {
+            "Capacitance": "100nF",
+            "Comment": "Murata GCM188R71H104KA57D",
+            "Description": "CAP CER 0.1UF 50V 10% X7R 0603",
+            "Designator": "C2, C3",
+            "Footprint": "CAPC1608X90X35ML10T15",
+            "LibRef": "CMP-119667-3",
+            "Quantity": "2"
+        },
+        {
+            "Capacitance": "",
+            "Comment": "uHAL_connector_reduced",
+            "Description": "connector for uHAL with reduced pin number",
+            "Designator": "J1",
+            "Footprint": "PCB-45ncoppm4oopozvqifsq-1",
+            "LibRef": "CMP-2q23h2cwhjlfm8s6r7i8-1",
+            "Quantity": "1"
+        },
+        {
+            "Capacitance": "",
+            "Comment": "10k",
+            "Description": "RCA Series 0603 0.1 W 0 O Jumper Surface Mount Thick Film Chip Resistor",
+            "Designator": "R1, R2, R5, R6",
+            "Footprint": "RESC1608X05N",
+            "LibRef": "CMP-31acf99032f6ee6b-1",
+            "Quantity": "4"
+        },
+        {
+            "Capacitance": "",
+            "Comment": "4.7k",
+            "Description": "RCA Series 0603 0.1 W 0 O Jumper Surface Mount Thick Film Chip Resistor",
+            "Designator": "R3, R4",
+            "Footprint": "RESC1608X05N",
+            "LibRef": "CMP-31acf99032f6ee6b-1",
+            "Quantity": "2"
+        },
+        {
+            "Capacitance": "",
+            "Comment": "Asahi Kasei AK8975BP-L",
+            "Description": "3-axis Electronic Compass",
+            "Designator": "U1",
+            "Footprint": "PCB-e1nx98ugchmxbk2nqwbe-1",
+            "LibRef": "CMP-3b1ff0b150b6e4d8-1",
+            "Quantity": "1"
+        }
+    ]
+}

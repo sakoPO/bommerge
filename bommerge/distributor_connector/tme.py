@@ -125,13 +125,13 @@ class TME:
         except:
             print("exception during tme search")
             return None
-        if result['Amount'] > len(result["ProductList"]):
-            pages_count = int((result['Amount'] / 20) + 1 if (result['Amount'] % 20) != 0 else 0)
-            print("Pages count: " + str(pages_count))
-            for page_number in range(2, pages_count + 1):
-                found = self.tme.search(None, category=category, on_stock=True, parameters=parameters, result_page=page_number)
-                result["ProductList"] = result["ProductList"] + found["ProductList"]
-            
+        if result:
+            if result['Amount'] > len(result["ProductList"]):
+                pages_count = int((result['Amount'] / 20) + 1 if (result['Amount'] % 20) != 0 else 0)
+                print("Pages count: " + str(pages_count))
+                for page_number in range(2, pages_count + 1):
+                    found = self.tme.search(None, category=category, on_stock=True, parameters=parameters, result_page=page_number)
+                    result["ProductList"] = result["ProductList"] + found["ProductList"]
         return result
 
 

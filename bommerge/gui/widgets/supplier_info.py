@@ -45,6 +45,8 @@ class supplier_info(tk.LabelFrame):
 
         if len(self.parts) > 1:
             self.create_component_list()
+        else:
+            self.parts[0]['Active'] = True
 
         self.create_component_details()
 
@@ -77,8 +79,10 @@ class supplier_info(tk.LabelFrame):
                 self.add_description(component)
             if i == self.active_part_index:
                 self.components.addItem(str(i), component, 'PartActive')
+                component['Active'] = True
             else:
                 self.components.addItem(str(i), component)
+                component['Active'] = False
 
 
     def create_component_details(self):

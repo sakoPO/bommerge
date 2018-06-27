@@ -13,15 +13,13 @@ def unify_dictionary_keys(bom):
         for component in bom[key]:
             unified_component = {}
             for key in unified_keys:
-                dest_key = 'Value' if key in ['Capacitance', 'Inductance'] else key                
-                if key in component:                    
-                    #if isinstance(component[key], basestring):
-                    #    unified_component[dest_key] = component[key].encode('ascii', 'replace')
-                    #else:
+                dest_key = 'Value' if key in ['Capacitance', 'Inductance', 'Resistance'] else key                
+                if key in component:
                     unified_component[dest_key] = component[key]
-                else:
+                elif dest_key not in unified_component.keys():
                     unified_component[dest_key] = ''
-            unified_bom.append(unified_component)
+#                    print(str(key) + " key not found in component: " + str(component))
+            unified_bom.append(dict(unified_component))
     return unified_bom
 
 
@@ -30,7 +28,7 @@ def sort_keys(keys):
         positions = {'Quantity': 0, 'Manufacturer Part Number': 2, 'Manufacturer': 3, 'Comment': 4, 'Resistance': 5, 'Capacitance': 6, 'Value': 7, 'Voltage': 8, 'Case': 9, 'Tolerance': 10, 'Dielectric Type' : 11}
         if x in positions:
             return positions[x]
-        return 11    
+        return 12    
     
     return sorted(keys, key=sorting_function)
 
@@ -40,3 +38,10 @@ def save(bom, filename):
         dict_writer = csv.DictWriter(outfile, sort_keys(unified_bom[0].keys()))
         dict_writer.writeheader()
         dict_writer.writerows(unified_bom)
+
+def save_list(bom, filename, write_header = True):
+    with open(filename, "w") as outfile:
+        dict_writer = csv.DictWriter(outfile, sort_keys(bom[0].keys()))
+        if write_header == True:
+            dict_writer.writeheader()
+        dict_writer.writerows(bom)

@@ -1,4 +1,5 @@
 import gui.componentListWidget as componentList
+from gui.widgets import order_summary
 from utils import files
 try:
     import Tkinter as tk
@@ -7,12 +8,6 @@ except ImportError:
     import tkinter as tk
     from tkinter import ttk
     
-#def loadFile(filename):
-#    import json
-#    with open(filename) as inputFile:
-#        bom = json.load(inputFile)
-#    return bom
-
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -222,9 +217,10 @@ class SuppliersDetailsWidget(ttk.Frame):
         
 
 class Bookmark(ttk.Frame):
-    def __init__(self, parent, group, columns_to_display, components, validator):
+    def __init__(self, parent, group, columns_to_display, components, validator, on_order_update):
         ttk.Frame.__init__(self, parent)
         self.components = components
+        self.on_order_update = on_order_update
         self.active_component_index = 0
         self.component_frame = ComponentGroup(self, group, columns_to_display, components, validator, self.on_selection)
         self.component_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
@@ -249,20 +245,22 @@ class Bookmark(ttk.Frame):
         self.components[self.active_component_index]['Order Quantity'] = quantity
         self.components[self.active_component_index]['Price'] = price
         self.component_frame.refresh_widget()
-        pass
+        if self.on_order_update:
+            self.on_order_update()
         
 
-class OrderWidget(ttk.Notebook):
-    def __init__(self, parent, filename):
+class OrderWidget_(ttk.Notebook):
+    def __init__(self, parent, components, on_order_update):
         ttk.Notebook.__init__(self, parent)
-        self.components = files.load_json_file(filename)
+        self.components = components
+        self.on_order_update = on_order_update
         for group in self.components.keys():
             for component in self.components[group]:
                 add_component_price(component)
         self.supplier_frame = {}
         self.procees_components()
         self.create_bookmarks()
-        self.pack(expand=True, fill=tk.BOTH)
+#        self.pack(expand=True, fill=tk.BOTH)
 
 
     def _remove_keys_if_exist(self, keys, keys_to_remove):
@@ -285,7 +283,7 @@ class OrderWidget(ttk.Notebook):
             for component in self.components[component_group]:
                 component['Price'] = 0
                 component['Order Quantity'] = ''
-                component['Supplier'] = ''
+                component['Supplier'] = 'None'
                 if component_group in columns_to_combine:
                     component['Parameters'] = combine(component, columns_to_combine[component_group])
 
@@ -341,16 +339,103 @@ class OrderWidget(ttk.Notebook):
                     validator = None                    
                 columns_to_display = self._remove_keys_if_exist(columns_to_display, ['Manufacturer', 'Description', 'Footprint', 'LibRef'])   
 
-                bookmark_layout = Bookmark(self, group, columns_to_display, self.components[group], validator)
+                bookmark_layout = Bookmark(self, group, columns_to_display, self.components[group], validator, self.on_order_update)
                 bookmark_layout.pack()
                 self.add(bookmark_layout, text=group)    
 
-    
+
+class OrderWidget(ttk.Frame):
+    def __init__(self, parent, filename):
+        ttk.Frame.__init__(self, parent)
+        self.parent = parent
+        self.components = files.load_json_file(filename)
+        self.order = {}
+        self.notebook = OrderWidget_(self, self.components, self.on_order_update)
+        self.order_summary = order_summary.order_summary(self, ['TME', 'Farnel', 'Mouser', 'RS Components'])
+        self.notebook.pack(expand=True, fill=tk.BOTH)
+        self.order_summary.pack(side=tk.BOTTOM, expand=True, fill=tk.X)
+        self.pack(expand=True, fill=tk.BOTH)
+        self.buttons_frame = ttk.Frame(self)
+        self.cancel_button = tk.Button(self.buttons_frame, text='Cancel', command=self.cancel)
+        self.done_button = tk.Button(self.buttons_frame, text='Done', command=self.done)
+        self.cancel_button.pack(side=tk.RIGHT)
+        self.done_button.pack(side=tk.RIGHT)
+        self.buttons_frame.pack()
+        self.result = None
+
+
+    def cancel(self):
+        self.parent.destroy()
+
+
+    def done(self):
+        self.update_result()
+        self.parent.destroy()
+
+
+    def calculate_order_price(self):
+        new_order = {}
+        for group in self.components.keys():
+            for component in self.components[group]:
+                supplier = component['Supplier']
+                if supplier in new_order:
+                   new_order[supplier] = new_order[supplier] + component['Price']
+                else:
+                   new_order[supplier] = component['Price']
+        for key in new_order.keys():
+            self.order[key] = new_order[key]
+        for key in self.order.keys():
+            if key not in new_order.keys():
+                self.order[key] = 0
+
+
+    def on_order_update(self):
+        self.calculate_order_price()
+        total_price = 0
+        for key in self.order.keys():
+            total_price = total_price + self.order[key]
+        for shop in self.order.keys():
+            if shop not in ['', 'None']:
+                print(shop)
+                self.order_summary.update(shop, self.order[shop], total_price)
+
+
+    def update_result(self):
+        def get_shop_url(component):
+            for distributor in component['Distributors']:
+                if distributor['Name'] == component['Supplier']:
+                    for component in distributor['Components']:
+                        if 'Active' in component and component['Active'] == True:
+                            return component['Links']['ProductInformationPage']
+
+        def get_manufacturer_part_number(component):
+            if 'Manufacturer Part Number' in component:
+                return component['Manufacturer Part Number']
+            return ''
+        def get_shop_part_number(component):
+            for distributor in component['Distributors']:
+                if distributor['Name'] == component['Supplier']:
+                    for component in distributor['Components']:
+                        if 'Active' in component and  component['Active'] == True:
+                            return component['Symbol']['SymbolTME']
+
+        self.result = {}
+        for group in self.components.keys():
+            for component in self.components[group]:
+                supplier = component['Supplier']
+                part = {'Manufacturer Part Number' : get_manufacturer_part_number(component), 'Quantity' : component['Order Quantity'], 'Shop URL': get_shop_url(component), 'Shop Part Number': get_shop_part_number(component)}
+                if supplier in self.result:
+                    self.result[supplier].append(part)
+                else:
+                    self.result[supplier] = [part]
+
+
 def main(filename):
     root = tk.Tk()
     root.title("BOM Merger")
     manualMerger = OrderWidget(root, filename)
     root.mainloop()
     
+
 if __name__ == "__main__":
     main("orderingDialogTestData.json")    

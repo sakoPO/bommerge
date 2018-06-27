@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
@@ -15,7 +15,7 @@ except ImportError:
 
 def loadProject(filename):
     project = files.load_json_file(filename)
-    project_directory = getDirectory(filename)
+    project_directory = files.get_directory_from_path(filename)
     print("Loading project: " + project_directory)
     for file in project:
         if not os.path.isabs(file['filename']):
@@ -25,12 +25,7 @@ def loadProject(filename):
 
 
 def saveProject(filename, project):
-#    def save_json_file(filename, dictionary):
-#        import json
-#        with open(filename, 'w') as outputfile:
-#            outputfile.write(json.dumps(project, indent=4, sort_keys=True, separators=(',', ': ')))
-
-    project_directory = getDirectory(filename)
+    project_directory = files.get_directory_from_path(filename)
     for file in project:
         normalized_path = os.path.normpath(file['filename'])
         print(normalized_path)
@@ -38,43 +33,13 @@ def saveProject(filename, project):
     files.save_json_file(filename, project)
 
 
-def parseCSVfiles(files, destynation):
-    print("Parsing csv files and saving results to: " + destynation)
-    for f in files:
-        csvToJson.convert(f['filename'], destynation)
 
 
-def getDirectory(path):
-    import os
-    absoluteProjectFilenamePath = os.path.abspath(path)
-    return os.path.dirname(absoluteProjectFilenamePath)
-
-
-def replaceFileExtension(filename, newExtension):
-    import os
-    return os.path.splitext(filename)[0] + newExtension
-
-
-def getFilenameFromPath(path):
-    import ntpath
-    return ntpath.basename(path)
-
-
-def get_user_home_directory():
-    from os.path import expanduser
-    return expanduser("~")
-
-def file_exist(file_path):
-    import os
-    
-    if os.path.exists(getDirectory(file_path)) and os.path.isfile(file_path):
-        return True
-    return False
 
 def read_configuration():
-    user_dir = get_user_home_directory()
+    user_dir = files.get_user_home_directory()
     configuration_file = user_dir + '/.bommerge/configuration.json'
-    if file_exist(configuration_file):
+    if files.file_exist(configuration_file):
         configuration = files.load_json_file(configuration_file)
         token = str(configuration['Distributors']['TME']['token'])
         app_secret =  str(configuration['Distributors']['TME']['app_secret'])
@@ -124,6 +89,7 @@ def find_component(components_group, group, tme_config):
             #print found            
             component["Distributors"].append({"Name": "TME", "Components": found})
 
+
 def find_component_comment(components_group, tme_config):
     from distributor_connector import tme
     
@@ -147,45 +113,58 @@ def ged_distributor_stock(merged, tme_config):
         find_component(merged[group], group, tme_config)
     #find_component(merged["Resistors"])
     #find_component_comment(merged["IntegratedCircuits"])
-    
-        
-#def saveFile(filename, content):
-#    import json
-#    with open(filename, 'w') as outfile:
-#        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
 
+
+def parse_files_if_needed(project_file_list, destynation):
+    print("Parsing csv files and saving results to: " + destynation)
+    for f in project_file_list:
+        file_path = f['filename']
+        if files.get_file_extension(file_path) == '.json':
+            files.copy(f, destynation + '/' + files.get_filename_from_path(file_path))
+        else:
+            csvToJson.convert(file_path, destynation)
 
 def mergeProject(project, workingDirectory, nogui):
     import os
     import automaticMerger
     import guiBOM as manual_merger
+
     directory = workingDirectory + "/tmp"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    parseCSVfiles(project, directory)
+
+    files.make_directory_if_not_exist(directory) 
+    parse_files_if_needed(project, directory)
+
     for bom in project:
-        bom['filename'] = os.path.join(directory, replaceFileExtension(getFilenameFromPath(bom['filename']), '.json'))
+        bom['filename'] = os.path.join(directory, files.replace_file_extension(files.get_filename_from_path(bom['filename']), '.json'))
 
     automergeOutputFile = os.path.join(directory, 'automerged.json')
     automaticMerger.merge(project, automergeOutputFile)
-    if nogui == None:
-        manual_merger.merge(automergeOutputFile)
-
     components = files.load_json_file(automergeOutputFile)
+    if nogui == None:
+        components = manual_merger.merge(automergeOutputFile)
+        
+    from exporters import csvExporter    
+    csvExporter.save(dict(components), os.path.join(workingDirectory, "mergedBOM.csv"))
+    
     tme_config = read_configuration()
     print(tme_config)
     ged_distributor_stock(components, tme_config)
-    filename = directory + '/order.json'
+    filename = directory + '/merged.json'
     files.save_json_file(filename, components)
-#    saveFile(filename, components)
     
     from gui import orderingDialog
     root = tk.Tk()
-    orderingDialog.OrderWidget(root, filename)
+    orderingWidget = orderingDialog.OrderWidget(root, filename)
     root.mainloop()
-
-    from exporters import csvExporter
-    csvExporter.save(dict(files.load_json_file(automergeOutputFile)), os.path.join(workingDirectory, "mergedBOM.csv"))
+    filename = directory + '/order.json'
+    files.save_json_file(filename, orderingWidget.components)
+    if orderingWidget.result:
+        for supplier in orderingWidget.result.keys():
+            csvExporter.save_list(orderingWidget.result[supplier], workingDirectory + '/' + supplier + '_human_readable.csv')    
+            order_list = []
+            for component in  orderingWidget.result[supplier]:
+                order_list.append({'Part number': component['Shop Part Number'], 'Quantity' : component['Quantity']})
+            csvExporter.save_list(order_list, workingDirectory + '/' + supplier + '.csv', write_header=False)
 
 
 class ProjectConfigWidget(ProjectConfigurationWidget):
@@ -208,12 +187,12 @@ def main():
     project = None
     if args.proj:
         project = loadProject(args.proj)
-        workingDirectory = getDirectory(args.proj)
+        workingDirectory = files.get_directory_from_path(args.proj)
 
     if project == None:
         projectConfigGui = ProjectConfigWidget()
         if projectConfigGui.result:
-            workingDirectory = getDirectory(projectConfigGui.result)
+            workingDirectory = files.get_directory_from_path(projectConfigGui.result)
             project = loadProject(projectConfigGui.result)
 
     if project:

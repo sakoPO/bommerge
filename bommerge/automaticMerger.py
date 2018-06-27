@@ -1,11 +1,6 @@
 from components import resistor
 from components import capacitor
-
-def convertCapacitanceToFarads(capacitance):
-    return capacitor.convert_capacitance_co_farads(capacitance)
-
-def convertResistanceToOhms(resistance):
-    return resistor.convert_resistance_to_ohms(resistance)
+from utils import files
 
 class ComponentContainer:
     def __init__(self):
@@ -65,7 +60,7 @@ class ComponentContainer:
 class Resistors(ComponentContainer):
     @staticmethod
     def isSame(resA, resB):
-        if convertResistanceToOhms(resA['Resistance']) != convertResistanceToOhms(resB['Resistance']):
+        if resistor.convert_resistance_to_ohms(resA['Resistance']) != resistor.convert_resistance_to_ohms(resB['Resistance']):
             return False
         if resA['Case'] != resB['Case']:
             return False
@@ -76,12 +71,12 @@ class Resistors(ComponentContainer):
         return True
     @staticmethod
     def valueForCompare(k):
-        return convertResistanceToOhms(k['Resistance'])
+        return resistor.convert_resistance_to_ohms(k['Resistance'])
 
 class Capacitors(ComponentContainer):
     @staticmethod
     def isSame(capA, capB):        
-        if convertCapacitanceToFarads(capA['Capacitance']) != convertCapacitanceToFarads(capB['Capacitance']):
+        if capacitor.convert_capacitance_co_farads(capA['Capacitance']) != capacitor.convert_capacitance_co_farads(capB['Capacitance']):
             return False
         if capA['Case'] != capB['Case']:
             return False
@@ -96,7 +91,7 @@ class Capacitors(ComponentContainer):
         return True
     @staticmethod
     def valueForCompare(k):
-        return convertCapacitanceToFarads(k['Capacitance'])
+        return capacitor.convert_capacitance_co_farads(k['Capacitance'])
 
 class Inductors(ComponentContainer):
     @staticmethod
@@ -157,22 +152,10 @@ class Others(ComponentContainer):
 def convertCsvToJson(csvFile):    
     csvToJson.convert(csvFile, 'tmp')
 
-def loadFile(filename):
-    print("Loading json file: " + filename)
-    import json
-    with open(filename) as inputFile:
-        bom = json.load(inputFile)
-    return bom
-
-def saveFile(filename, content):
-    import json
-    with open(filename, 'w') as outfile:
-        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
-
 
 def saveMerged(mergedBom, filename):
     fileContent = {'Capacitors': mergedBom['Capacitors'].toList(), 'Resistors': mergedBom['Resistors'].toList(), 'Inductors': mergedBom['Inductors'].toList(), 'IntegratedCircuits': mergedBom['IntegratedCircuits'].toList(), 'Connectors': mergedBom['Connectors'].toList(), 'Others': mergedBom['Others'].toList()}
-    saveFile(filename, fileContent)
+    files.save_json_file(filename, fileContent)
 
 def bomMultiply(bom, mul):
     for key in ['Capacitors', 'Resistors', 'Inductors', 'IntegratedCircuits', 'Connectors', 'Others']:
@@ -195,7 +178,7 @@ def merge(jsonFileList, outputFilename):
     merged['Others'] = Others()
     
     for bomFile in jsonFileList:
-        bom = loadFile(bomFile['filename'])
+        bom = files.load_json_file(bomFile['filename'])
         bom = bomMultiply(bom, bomFile['Quantity'])
         for key in ['Capacitors', 'Resistors', 'Inductors', 'IntegratedCircuits', 'Connectors', 'Others']:
             for component in bom[key]:
@@ -216,7 +199,7 @@ def main():
     others = Others()
     
     for jsonFile in jsonFileList:
-        bom = loadFile(jsonFile)
+        bom = files.load_json_file(jsonFile)
         for cap in bom['Capacitors']:
             capacitors.addUnique(cap, bom['filename'])
         for res in bom['Resistors']:
@@ -238,7 +221,7 @@ def main():
     others.sort()
 
     fileContent = {'Capacitors': capacitors.toList(), 'Resistors': resistors.toList(), 'Inductors': inductors.toList(), 'IntegratedCircuits': integratedCircuits.toList(), 'Connectors': connectors.toList(), 'Others': others.toList()}
-    saveFile('merged.json', fileContent)
+    files.save_json_file('merged.json', fileContent)
        
 
 

@@ -33,9 +33,6 @@ def saveProject(filename, project):
     files.save_json_file(filename, project)
 
 
-
-
-
 def read_configuration():
     user_dir = files.get_user_home_directory()
     configuration_file = user_dir + '/.bommerge/configuration.json'
@@ -86,7 +83,6 @@ def find_component(components_group, group, tme_config):
         if "Distributors" not in component:
             component["Distributors"] = []
         if found:
-            #print found            
             component["Distributors"].append({"Name": "TME", "Components": found})
 
 
@@ -124,6 +120,7 @@ def parse_files_if_needed(project_file_list, destynation):
         else:
             csvToJson.convert(file_path, destynation)
 
+
 def mergeProject(project, workingDirectory, nogui):
     import os
     import automaticMerger
@@ -137,13 +134,19 @@ def mergeProject(project, workingDirectory, nogui):
     for bom in project:
         bom['filename'] = os.path.join(directory, files.replace_file_extension(files.get_filename_from_path(bom['filename']), '.json'))
 
-    automergeOutputFile = os.path.join(directory, 'automerged.json')
-    automaticMerger.merge(project, automergeOutputFile)
-    components = files.load_json_file(automergeOutputFile)
+    components = automaticMerger.merge(project)
     if nogui == None:
-        components = manual_merger.merge(automergeOutputFile)
+        root = tk.Tk()
+        root.title("BOM Merger")
+        merger = manual_merger.ManualMerger(root, components)
+        root.mainloop()
+        if merger.result:
+            components =  merger.components
+        else:
+            components = None
 
-    if components:  
+    if components:
+        files.save_json_file(os.path.join(directory, 'automerged.json'), components)
         from exporters import csvExporter    
         csvExporter.save(dict(components), os.path.join(workingDirectory, "mergedBOM.csv"))
         
@@ -177,6 +180,12 @@ class ProjectConfigWidget(ProjectConfigurationWidget):
         return saveProject(filename, project)
 
 
+def first_run():
+    user_dir = files.get_user_home_directory()
+    configuration_file = user_dir + '/.bommerge/configuration.json'
+    return files.file_exist(configuration_file) == False
+
+
 def main():
     import argparse
 
@@ -184,6 +193,9 @@ def main():
     parser.add_argument("-p", "--proj", help="Project definition file")
     parser.add_argument("--nogui", help="Run bommerge without gui, only automatical merge will be performed.")
     args = parser.parse_args()
+
+    if first_run():
+        pass
 
     project = None
     if args.proj:

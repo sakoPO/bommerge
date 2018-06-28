@@ -82,6 +82,11 @@ class _api:
         self.country = country
         self.currency = currency
 
+
+    def get_nonce(self):
+        self._api_call('Auth/GetNonce', None, True)
+
+
     def search(self, search_text, category=None, on_stock=None, result_page=None,  parameters=None, search_order=None, search_order_type=None):
         params = self._encode_search_parameters(search_text, category, result_page, on_stock, parameters, search_order, search_order_type)
         response = self._api_call('Products/Search', params, True)

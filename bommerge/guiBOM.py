@@ -176,7 +176,10 @@ class ComponentGroup(ttk.Frame):
         print("you clicked on: ", item)
         component = self.components[item[0]]
         if 'Manufacturer Part Number' in component:
-            resolved_parameters = self.resolver.resolve(component['Manufacturer Part Number'])
+            if self.resolver:
+                resolved_parameters = self.resolver.resolve(component['Manufacturer Part Number'])
+            else:
+                resolved_parameters = None
         partDetailDialog.PartDetailDialog(self.parent, component, resolved_parameters)
 
 

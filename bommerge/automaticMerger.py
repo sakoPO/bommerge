@@ -56,7 +56,6 @@ class ComponentContainer:
         self.components[i]['Designator'] = self.components[i]['Designator'] + part['Designator']
 
 
-
 class Resistors(ComponentContainer):
     @staticmethod
     def isSame(resA, resB):
@@ -72,6 +71,7 @@ class Resistors(ComponentContainer):
     @staticmethod
     def valueForCompare(k):
         return resistor.convert_resistance_to_ohms(k['Resistance'])
+
 
 class Capacitors(ComponentContainer):
     @staticmethod
@@ -93,6 +93,7 @@ class Capacitors(ComponentContainer):
     def valueForCompare(k):
         return capacitor.convert_capacitance_co_farads(k['Capacitance'])
 
+
 class Inductors(ComponentContainer):
     @staticmethod
     def isSame(partA, partB):
@@ -109,6 +110,7 @@ class Inductors(ComponentContainer):
     def valueForCompare(k):
         return k['Inductance']
 
+
 class IntegratedCircuits(ComponentContainer):
     @staticmethod
     def isSame(partA, partB):
@@ -122,6 +124,7 @@ class IntegratedCircuits(ComponentContainer):
     @staticmethod
     def valueForCompare(k):
         return k['Manufacturer Part Number']
+
 
 class Connectors(ComponentContainer):
     @staticmethod
@@ -149,26 +152,24 @@ class Others(ComponentContainer):
         return k['Comment']
 
 
-def convertCsvToJson(csvFile):    
-    csvToJson.convert(csvFile, 'tmp')
-
-
-def saveMerged(mergedBom, filename):
-    fileContent = {'Capacitors': mergedBom['Capacitors'].toList(), 'Resistors': mergedBom['Resistors'].toList(), 'Inductors': mergedBom['Inductors'].toList(), 'IntegratedCircuits': mergedBom['IntegratedCircuits'].toList(), 'Connectors': mergedBom['Connectors'].toList(), 'Others': mergedBom['Others'].toList()}
-    files.save_json_file(filename, fileContent)
-
 def bomMultiply(bom, mul):
     for key in ['Capacitors', 'Resistors', 'Inductors', 'IntegratedCircuits', 'Connectors', 'Others']:
         for component in bom[key]:
             component['Quantity'] = int(component['Quantity']) * mul
     return bom    
 
+
 def sortMergedComponents(merged):
     for key in ['Capacitors', 'Resistors', 'Inductors', 'IntegratedCircuits', 'Connectors', 'Others']:
         merged[key].sort()
     return merged        
-    
-def merge(jsonFileList, outputFilename):
+
+
+def convert_to_dictionary(mergedBom):
+    return {'Capacitors': mergedBom['Capacitors'].toList(), 'Resistors': mergedBom['Resistors'].toList(), 'Inductors': mergedBom['Inductors'].toList(), 'IntegratedCircuits': mergedBom['IntegratedCircuits'].toList(), 'Connectors': mergedBom['Connectors'].toList(), 'Others': mergedBom['Others'].toList()}
+
+
+def merge(jsonFileList):
     merged = {}
     merged['Capacitors'] = Capacitors()
     merged['Resistors'] = Resistors()
@@ -185,43 +186,5 @@ def merge(jsonFileList, outputFilename):
                 merged[key].addUnique(component, bom['filename'])
 
     merged = sortMergedComponents(merged)
-    saveMerged(merged, outputFilename)
-    
-def main():
-    for csvFile in fileList:
-        convertCsvToJson(csvFile)
-
-    capacitors = Capacitors()
-    resistors = Resistors()
-    inductors = Inductors()
-    integratedCircuits = IntegratedCircuits()
-    connectors = Connectors()
-    others = Others()
-    
-    for jsonFile in jsonFileList:
-        bom = files.load_json_file(jsonFile)
-        for cap in bom['Capacitors']:
-            capacitors.addUnique(cap, bom['filename'])
-        for res in bom['Resistors']:
-            resistors.addUnique(res, bom['filename'])
-        for inductor in bom['Inductors']:
-            inductors.addUnique(inductor, bom['filename'])
-        for ic in bom['IntegratedCircuits']:
-            integratedCircuits.addUnique(ic, bom['filename'])
-        for connector in bom['Connectors']:
-            connectors.addUnique(connector, bom['filename'])
-        for component in bom['Others']:
-            others.addUnique(component, bom['filename'])
-
-    capacitors.sort()
-    resistors.sort()
-    inductors.sort()
-    integratedCircuits.sort()
-    connectors.sort()
-    others.sort()
-
-    fileContent = {'Capacitors': capacitors.toList(), 'Resistors': resistors.toList(), 'Inductors': inductors.toList(), 'IntegratedCircuits': integratedCircuits.toList(), 'Connectors': connectors.toList(), 'Others': others.toList()}
-    files.save_json_file('merged.json', fileContent)
-       
-
+    return convert_to_dictionary(merged)
 

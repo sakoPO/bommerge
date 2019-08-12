@@ -1,6 +1,7 @@
 from components import resistor
 from components import capacitor
 from utils import files
+from functools import cmp_to_key
 
 class ComponentContainer:
     def __init__(self):
@@ -9,9 +10,11 @@ class ComponentContainer:
     @staticmethod
     def isSame(componentA, componentB):
         raise RuntimeError('Unimplemented method')
+
     @staticmethod
     def valueForCompare(k):
         raise RuntimeError('Unimplemented method')
+
     @staticmethod
     def transform(part, filename):
         newPart = part
@@ -43,9 +46,37 @@ class ComponentContainer:
     def sort(self):
         def key(value):
             result = self.valueForCompare(value)
-            return result if result != None else 0
+            if result == 'DNF':
+                return -1
+            print(result)
+            return result if result is not None else 0
+
+        def cmp_items(a, b):
+            a_value = self.valueForCompare(a)
+            b_value = self.valueForCompare(b)
+            if a_value is None:
+                a_value = 0
+            elif a_value == "DNF":
+                a_value = -1
+            if b_value is None:
+                b_value = 0
+            elif b_value == "DNF":
+                b_value = -1
+
+            try:
+                if a_value > b_value:
+                    return 1
+                elif a_value == b_value:
+                    return 0
+                else:
+                    return -1
+            except TypeError:
+                if isinstance(a_value, str):
+                    return 1
+                else:
+                    return -1
             
-        self.components = sorted(self.components, key=key)
+        self.components = sorted(self.components, key=cmp_to_key(cmp_items))
 
     def toList(self):
         return self.components
@@ -97,18 +128,26 @@ class Capacitors(ComponentContainer):
 class Inductors(ComponentContainer):
     @staticmethod
     def isSame(partA, partB):
-        if partA['Inductance'] != partB['Inductance']:
-            return False
-        if partA['Case'] != partB['Case']:
-            return False
-        if partA['Manufacturer'] != partB['Manufacturer']:
-            return False
-        if partA['Manufacturer Part Number'] != partB['Manufacturer Part Number']:
-            return False
-        return True
+        if 'Inductance' in partA and 'Iinductance' in partB:
+            if partA['Inductance'] != partB['Inductance']:
+                return False
+        if 'Case' in partA and 'Case' in partB:
+            if partA['Case'] != partB['Case']:
+                return False
+        if 'Manufacturer' in partA and 'Manufacturer' in partB:
+            if partA['Manufacturer'] != partB['Manufacturer']:
+                return False
+        if 'Manufacturer Part Number' in partA and 'Manufacturer Part Number' in partB:
+            if partA['Manufacturer Part Number'] != partB['Manufacturer Part Number']:
+                return False
+            return True
+
+
     @staticmethod
     def valueForCompare(k):
-        return k['Inductance']
+        if 'Inductance' in k:
+            return k['Inductance']
+        return None
 
 
 class IntegratedCircuits(ComponentContainer):
@@ -144,11 +183,14 @@ class Connectors(ComponentContainer):
 class Others(ComponentContainer):
     @staticmethod
     def isSame(partA, partB):
-        if partA['Comment'] != partB['Comment']:
-            return False
-        return True
+        if 'Comment' in partA and 'Comment' in partB:
+            if partA['Comment'] == partB['Comment']:
+                return True
+        return False
     @staticmethod
     def valueForCompare(k):
+        if 'Comment' not in k:
+            return None
         return k['Comment']
 
 

@@ -22,8 +22,12 @@ multiply = {u'G': Decimal('1000000000'),
 def convert_resistance_to_ohms(resistance):
     import re
 
-    if resistance == None:
+    if resistance == None or resistance == "<VALUE>":
        return None
+    if resistance == "DNF" or resistance == "DNP" or resistance == "DNC":
+       return "DNF"
+    resistance = resistance.replace("Ohms", "\u03a9")
+    resistance = resistance.replace("Ohm", "\u03a9")
     try:
         separated = re.split('(\d+)', resistance)
         if separated[-1] in multiply:
@@ -47,6 +51,8 @@ def convert_resistance_to_ohms(resistance):
 def ohms_to_string(ohms):
     if ohms == None:
         return None
+    if ohms == "DNF":
+        return "DNF"
     if ohms == Decimal('0'):
         return u'0\u03a9'
     for key in ['u\u03a9', 'm\u03a9', '\u03a9','k\u03a9', 'M\u03a9', 'G\u03a9']:

@@ -21,27 +21,35 @@ multiply = {'G': Decimal('1000000000'),
 
 
 def convert_capacitance_co_farads(capacitance):
-    if capacitance == None:
-       return None
-    separatedCapacitance = re.split('(\d+)', capacitance)
-    if separatedCapacitance[-1] in multiply:
-        multiplier = multiply[separatedCapacitance[-1]]
-        value = Decimal(capacitance.replace(separatedCapacitance[-1], ''))
-        value = value * multiplier
-        return value
-    else:
-        for i, chunk in enumerate(separatedCapacitance):
-            if chunk in multiply:                
-                multiplier = multiply[chunk]
-                capacitance = Decimal(capacitance.replace(chunk, '.'))
-                capacitance = capacitance * multiplier
-                return capacitance
-        return Decimal(capacitance)
+    try:
+        if capacitance is None:
+            return None
+        if capacitance == 'DNF':
+            return 'DNF'
+        separatedCapacitance = re.split('(\d+)', capacitance)
+        if separatedCapacitance[-1] in multiply:
+            multiplier = multiply[separatedCapacitance[-1]]
+            value = Decimal(capacitance.replace(separatedCapacitance[-1], ''))
+            value = value * multiplier
+            return value
+        else:
+            for i, chunk in enumerate(separatedCapacitance):
+                if chunk in multiply:
+                    multiplier = multiply[chunk]
+                    capacitance = Decimal(capacitance.replace(chunk, '.'))
+                    capacitance = capacitance * multiplier
+                    return capacitance
+            return Decimal(capacitance)
+    except:
+        print(capacitance)
+        raise
 
 
 def farads_to_string(farads):
-    if farads == None:
+    if farads is None:
         return None
+    if farads == "DNF":
+        return "DNF"
     for key in ['fF', 'pF', 'nF', 'uF', 'mF', 'F','kF', 'MF', 'GF']:
         value = farads / multiply[key]
         if value < Decimal('1000.0') and value >= Decimal('0.0'):

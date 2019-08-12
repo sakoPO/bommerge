@@ -7,6 +7,7 @@ from utils import files
 def convertMetricSMDToImperialSMD(caseCode):
     return False
 
+
 def removeNumberFromDesignator(designator):
     import re
     match = re.match(r'([A-Za-z]+)\d+', designator)
@@ -14,13 +15,18 @@ def removeNumberFromDesignator(designator):
         return match.group(1)
     return ''
 
+
 def isCapacitor(component):
+    if 'BOM Group' in component:
+        if component['BOM Group'] == 'Capacitors':
+            return True
     if 'Capacitance' in component:
         if component['Capacitance'] != '':
             return True    
     if removeNumberFromDesignator(component['Designator']) == 'C':
         return True
     return False
+
 
 def isResistor(component):
     if 'Resistance' in component:
@@ -30,6 +36,7 @@ def isResistor(component):
         return True
     return False
 
+
 def isInductor(component):
     if 'Inductance' in component:
         if component['Inductance'] != '':
@@ -37,6 +44,7 @@ def isInductor(component):
     if removeNumberFromDesignator(component['Designator']) == 'L':
         return True
     return False
+
 
 def isTransistor(component):
     if removeNumberFromDesignator(component['Designator']) == 'Q':
@@ -70,7 +78,7 @@ def getQuantity(component):
 
 def getCase(component):
     imperialCase = ['01005', '0201', '0402', '0603', '0805', '1008', '1206', '1210', '1806', '1812', '2010', '2512']
-    for field in ['Comment', 'Description']: 
+    for field in ['Comment', 'Description']:
         if field in component:
             for word in component[field].split():
                 for case in imperialCase:
@@ -78,6 +86,9 @@ def getCase(component):
                         return case
     if 'RESC1608' in component['Footprint'] or 'CAPC1608' in component['Footprint']:
         return '0603'
+    match = re.search('(\d+)',component['Footprint'])
+    if match and match.group(1) in imperialCase:
+        return match.group(1)
     return None
 
 def getTolerance(component):
@@ -93,7 +104,7 @@ def getTolerance(component):
 def decodeCapacitor(component):
     def getCapacitance(component):
         import re
-        for field in ['Capacitance', 'capacitance']:
+        for field in ['Capacitance', 'capacitance', 'Value']:
             if field in component:
                 if component[field] != '':
                     return component[field].replace(" ", "").replace(",", ".")
@@ -151,8 +162,6 @@ def decodeCapacitor(component):
                             return word
         return ''
 
-
-
     part = {}
     part['Capacitance'] = capacitor.farads_to_string(capacitor.convert_capacitance_co_farads(getCapacitance(component)))
     part['Voltage'] = getVoltage(component)
@@ -164,10 +173,11 @@ def decodeCapacitor(component):
     part['Designator'] = component['Designator']
     part['Tolerance'] = getTolerance(component)
     return part
-  
+
+
 def decodeResistor(component):
     def getResistance(component):
-        for field in ['Resistance', 'resistance']:
+        for field in ['Resistance', 'resistance', 'Value']:
             if field in component:
                 if component[field] != '':
                     return component[field].replace(" ", "").replace(",", ".").replace('?', 'R')
@@ -234,6 +244,7 @@ def decodeConnector(component):
     connector['Quantity'] = getQuantity(component)
     connector['Designator'] = component['Designator']
     return connector
+
 
 def decodeIntegratedCircuit(component):
     def getManufacturerPartNumber(component):

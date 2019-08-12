@@ -95,13 +95,17 @@ class ComponentGroup(ttk.Frame):
             self.value_key = 'Comment'
             self.resolver = None
 
-
     def create_gui(self, columns):
         def on_selection_change():
             if len(self.widget.getSelectedIndices()) > 1:
                 self.button.config(state=tk.NORMAL)
             else:
                 self.button.config(state=tk.DISABLED)
+
+            if len(self.widget.getSelectedIndices()) >= 1:
+                self.button_delete.config(state=tk.NORMAL)
+            else:
+                self.button_delete.config(state=tk.DISABLED)
 
         self.widget = componentList.ScrolledComponentsList(master=self,
                                                            on_selction_change=on_selection_change,
@@ -113,6 +117,9 @@ class ComponentGroup(ttk.Frame):
         self.button = tk.Button(self.button_frame, text='Merge', command=self.on_merge_button_pressed)
         self.button.config(state=tk.DISABLED)
         self.button.pack(side=tk.LEFT)
+        self.button_delete = tk.Button(self.button_frame, text='Delete', command=self.on_delete_button_pressed)
+        self.button_delete.config(state=tk.DISABLED)
+        self.button_delete.pack(side=tk.LEFT)
         self.order_button = tk.Button(self.button_frame, text='Start Ordering', command=self.parent.start_order)
         self.order_button.pack(side=tk.LEFT)
         self.cancel_button = tk.Button(self.button_frame, text='Cancel', command=self.parent.cancel)
@@ -121,12 +128,16 @@ class ComponentGroup(ttk.Frame):
 
     def sort(self):
         def resistors_key(x):
-            if x['Resistance'] != None:
+            if x['Resistance'] == 'DNR':
+                return -1;
+            if x['Resistance'] is not None:
                 return resistor.convert_resistance_to_ohms(x['Resistance'])
             return 0
 
         def capacitors_key(x):
-            if x['Capacitance'] != None:
+            if x['Capacitance'] == 'DNF':
+                return -1
+            if x['Capacitance'] is not None:
                 return capacitor.convert_capacitance_co_farads(x['Capacitance'])
             return 0
 
@@ -135,8 +146,11 @@ class ComponentGroup(ttk.Frame):
         elif self.name == 'Resistors':
             self.components.sort(key=resistors_key)
         else:
-            self.components.sort()
-
+            try:
+                self.components.sort()
+            except TypeError as e:
+                print(e)
+                pass
 
     def refresh_widget(self):
         self.widget.removeAllItems()
@@ -147,14 +161,15 @@ class ComponentGroup(ttk.Frame):
                 self.widget.addItem(str(i), component, component['validation_status'])
             else:
                 self.widget.addItem(str(i), component)
-    
 
     def remove_components_by_indices(self, indices_list):
         indices_list.sort(reverse=True)
         for index in indices_list:
             tmp = self.components.pop(index)
-            print("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
-        
+            try:
+                print("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
+            except KeyError:
+                print("Removing component, With index: " + str(index))
 
     def on_merge_button_pressed(self):
         components_to_merge = []
@@ -170,6 +185,10 @@ class ComponentGroup(ttk.Frame):
             self.sort()
             self.refresh_widget()
 
+    def on_delete_button_pressed(self):
+        selected_indices = self.widget.getSelectedIndices()
+        self.remove_components_by_indices(selected_indices)
+        self.refresh_widget()
 
     def on_item_double_click(self, event):
         item = self.widget.getSelectedIndices()

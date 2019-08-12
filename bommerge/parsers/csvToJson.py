@@ -143,8 +143,11 @@ def decodeCapacitor(component):
         return ''
 
     def getDielectricType(component):
-        dielectricsList = ['X7R', 'Y5V', 'C0G']
-        for field in ['Comment', 'Description']: 
+        dielectricsList = ['X5R', 'X7R', 'Y5V', 'C0G', 'NP0']
+        if 'Dielectric Type' in component:
+            if component['Dielectric Type'] is not None and component['Dielectric Type'] != "":
+                return component['Dielectric Type']
+        for field in ['Comment', 'Description']:
             if field in component:
                 for word in component[field].split():
                     for dielectric in dielectricsList:

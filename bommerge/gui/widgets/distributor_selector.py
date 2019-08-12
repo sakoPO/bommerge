@@ -15,14 +15,14 @@ class distributor_selector(tk.LabelFrame):
 
         self.distributor = {}        
         self.distributor['None'] = tk.Radiobutton(self, text='None', variable=self.active_distributor, value=1, command=self._on_selection)
-        self.distributor['PartKeeper'] = tk.Radiobutton(self, text='PartKeeper', variable=self.active_distributor, value=2, command=self._on_selection)
+        self.distributor['PartKeepr'] = tk.Radiobutton(self, text='PartKeepr', variable=self.active_distributor, value=2, command=self._on_selection)
         self.distributor['TME'] = tk.Radiobutton(self, text='TME', variable=self.active_distributor, value=3, command=self._on_selection)
         self.distributor['RS Components'] = tk.Radiobutton(self, text='RS Components', variable=self.active_distributor, value=4, command=self._on_selection)
         self.distributor['Farnel'] = tk.Radiobutton(self, text='Farnel', variable=self.active_distributor, value=5, command=self._on_selection)
         self.distributor['Mouser'] = tk.Radiobutton(self, text='Mouser', variable=self.active_distributor, value=6, command=self._on_selection)
                 
         self.distributor['None'].grid(column=0, row=0, sticky=tk.W)
-        self.distributor['PartKeeper'].grid(column=0, row=1, sticky=tk.W)
+        self.distributor['PartKeepr'].grid(column=0, row=1, sticky=tk.W)
         self.distributor['TME'].grid(column=0, row=2, sticky=tk.W)
         self.distributor['RS Components'].grid(column=1, row=0, sticky=tk.W)
         self.distributor['Farnel'].grid(column=1, row=1, sticky=tk.W)
@@ -39,5 +39,5 @@ class distributor_selector(tk.LabelFrame):
             self.on_distributor_change(self.get())
 
     def get(self):
-        val_to_str = ['None', 'PartKeeper', 'TME', 'RS Components', 'Farnel', 'Mouser']
+        val_to_str = ['None', 'PartKeepr', 'TME', 'RS Components', 'Farnel', 'Mouser']
         return val_to_str[self.active_distributor.get() - 1]

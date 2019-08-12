@@ -56,16 +56,23 @@ class ScrolledComponentsList(ttk.Frame):
                 self.treeview.column(column, minwidth=10*len(column), anchor='center', stretch=tk.YES)
 
     def addItem(self, item, component, tag=None):
-        value = []
-        for key in self.treeview['columns']:
-            if key in self.dataGeter:
-                value.append(self.dataGeter[key](component))
+        try:
+            value = []
+            for key in self.treeview['columns']:
+                if key in self.dataGeter:
+                    value.append(self.dataGeter[key](component))
+                else:
+                    if key in component:
+                        value.append(component[key])
+                    else:
+                        value.append("")
+            if tag:
+                self.treeview.insert('', 'end', text=item, values=value, tags=tag)
             else:
-                value.append(component[key])
-        if tag:
-            self.treeview.insert('', 'end', text=item, values=value, tags=tag)
-        else:
-            self.treeview.insert('', 'end', text=item, values=value)
+                self.treeview.insert('', 'end', text=item, values=value)
+        except:
+            print("item " + str(item) + " Component " + str(component))
+            raise
         
     def removeAllItems(self):
         for i in self.treeview.get_children():

@@ -68,10 +68,15 @@ def api_call(action, params, token, app_secret, show_header=False):
     req = urlrequest.Request(api_url, urlencode(params).encode('ascii'), http_header);
 
     # submit your request
-    res = urlopen(req);
-    html = res.read();
+    try:
+        res = urlopen(req)
+        html = res.read()
+        return html.decode('utf-8')
+    except urllib.error.HTTPError:
+        return None
 
-    return html.decode('utf-8');
+
+
 
 
 class _api:
@@ -88,11 +93,15 @@ class _api:
 
 
     def search(self, search_text, category=None, on_stock=None, result_page=None,  parameters=None, search_order=None, search_order_type=None):
-        params = self._encode_search_parameters(search_text, category, result_page, on_stock, parameters, search_order, search_order_type)
-        response = self._api_call('Products/Search', params, True)
-        response = json.loads(response)
-        if response['Status'] == "OK" and len(response['Data']['ProductList']) != 0:
-            return response['Data']
+        try:
+            params = self._encode_search_parameters(search_text, category, result_page, on_stock, parameters, search_order, search_order_type)
+            response = self._api_call('Products/Search', params, True)
+            response = json.loads(response)
+            if response['Status'] == "OK" and len(response['Data']['ProductList']) != 0:
+                return response['Data']
+        except TypeError:
+            print("=================================================")
+            print(str(response))
 
 
     def searchParameter(self, search_text, category=None, on_stock=None, result_page=None,  parameters=None, search_order=None, search_order_type=None):
@@ -154,7 +163,6 @@ class _api:
         if response['Status'] == "OK":
             return response['Data']['ProductList']
 
-
     def get_prices_and_stocks(self, components):
         if len(components) > 50:
             raise RuntimeError("Components count to big. get_prices_and_stocks function can read stock data up to 50 components, requested " + str(len(components)))
@@ -168,10 +176,10 @@ class _api:
             params[key] = result[key]
             
         response = self._api_call('Products/GetPricesAndStocks', params, True)
-        response = json.loads(response)
-        if response['Status'] == "OK":
-            return response['Data']
-
+        if response is not None:
+            response = json.loads(response)
+            if response['Status'] == "OK":
+                return response['Data']
 
     def get_products(self, components):
         if len(components) > 50:
@@ -271,7 +279,3 @@ class _api:
             key = 'SymbolList[' + str(i) + ']'
             result[key] = value
         return result
-
-                  
-
-    

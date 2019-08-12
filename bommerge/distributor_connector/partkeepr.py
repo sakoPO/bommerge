@@ -116,7 +116,7 @@ class Partkeepr:
         }
         response = self.__partkeepr_api_call('get', '/api/parts', params=params)
         response = response.json()
-        print(json.dumps(response, indent=4))
+        #print(json.dumps(response, indent=4))
         if len(response["hydra:member"]) > 0:
             parts = []
             for component in response["hydra:member"]:
@@ -157,6 +157,8 @@ class Partkeepr:
             elif name == "Capacitance":
                 encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
             elif name == "Tolerance":
+                encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
+            elif name == "Resistance":
                 encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
             else:
                 if parameter["valueType"] == "string":

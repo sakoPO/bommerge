@@ -1,28 +1,30 @@
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
-    
-mergedComponent = {}   
+import wx
 
-class MergeDialog(tk.Toplevel):
+mergedComponent = {}
+
+
+class MergeDialog(wx.Dialog):
     def __init__(self, parent, columns, components):
-        tk.Toplevel.__init__(self, parent)
-        self.transient(parent)
-        self.title("Manual merging")
+        wx.Dialog.__init__(self, parent, id=wx.ID_ANY, title=u"Manual merging", pos=wx.DefaultPosition,
+                           size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE)
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
         self.parent = parent
         self.result = None
-    
-        self._createComponentsTable(columns, components)
-        
+
+        components_table = self._createComponentsTable(columns, components)
         merged = self.mergeFields(components)
-        mergeFields = self._createMergeFields(columns, merged)
-        self._createButtons(mergeFields, merged)
-        self.update_idletasks()
-        self.protocol("WM_DELETE_WINDOW", self.cancel)        
-        self.wait_window(self)
+        [sizer, mergeFields] = self._createMergeFields(columns, merged)
+        buttons = self._createButtons(mergeFields, merged)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(components_table, 1, wx.EXPAND | wx.ALL, 5)
+        main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 5)
+        main_sizer.Add(buttons, 1, wx.EXPAND | wx.ALL, 5)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        main_sizer.Fit(self)
+        self.Centre(wx.BOTH)
 
     @staticmethod
     def sumQuantity(components):
@@ -30,7 +32,7 @@ class MergeDialog(tk.Toplevel):
         for component in components:
             quantity = quantity + int(component['Quantity'])
         return quantity
-        
+
     @staticmethod
     def mergeDesignator(components):
         designator = ''
@@ -38,16 +40,16 @@ class MergeDialog(tk.Toplevel):
             designator = designator + component['Designator']
         return designator
 
-    def mergeFields(self, components):    
+    def mergeFields(self, components):
         def replaceNone(fieldValue):
             if fieldValue:
                 return fieldValue
             return ''
-    
+
         merged = {}
         merged['Quantity'] = self.sumQuantity(components)
         merged['Designator'] = self.mergeDesignator(components)
-        
+
         for component in components:
             for field in component.keys():
                 if field in ['Quantity', 'Designator']:
@@ -57,11 +59,7 @@ class MergeDialog(tk.Toplevel):
 
                 merged[field].add(replaceNone(component[field]))
         return merged
-                        
-    def cancel(self, event=None):
-        self.parent.focus_set()
-        self.destroy()
-        
+
     @staticmethod
     def merge(combos, merged):
         fields_to_skip = ['validation_status']
@@ -70,86 +68,88 @@ class MergeDialog(tk.Toplevel):
                 continue
             if field in ['Quantity', 'Designator']:
                 mergedComponent[field] = merged[field]
+            elif isinstance(combos[field], wx.TextCtrl):
+                mergedComponent[field] = combos[field].GetLineText(0)
             else:
-                mergedComponent[field] = combos[field].get()
+                mergedComponent[field] = combos[field].GetStringSelection()
         return mergedComponent
 
-
     def _createComponentsTable(self, columns, components):
-        parent = ttk.Frame(self)
-        r = 0
-        for c, column in enumerate(columns):
-            l = tk.Label(parent, text=column)
-            l.grid(row=0, column=c)
-            for r, component in enumerate(components):       
-                e = tk.Entry(parent, disabledbackground='white', disabledforeground='black')
+        parent = wx.FlexGridSizer(len(columns), 5, 5)  # ttk.Frame(self)
+        # first line
+        for column in columns:
+            label = wx.StaticText(self, label=column)
+            parent.Add(label, 1, wx.EXPAND | wx.ALL, 3)
+        # components
+        for component in components:
+            for column in columns:
+                entry = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY)
+                entry.SetMinSize(wx.Size(80, 25))
                 if component[column]:
-                    e.insert(10, component[column])
-                e.grid(row=r+1, column=c)
-                e.config(state=tk.DISABLED)
-        parent.pack()        
-            
+                    entry.SetValue(str(component[column]))
+                parent.Add(entry, 1, wx.EXPAND | wx.ALL, 3)
+        return parent
+
     def _createMergeFields(self, columns, component):
         def createTextWidget(parent, text):
-            textWidget = tk.Text(parent, width=50, height=10)
-            textWidget.insert(tk.INSERT, text)        
+            textWidget = wx.TextCtrl(parent, wx.ID_ANY, text, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY)
             return textWidget
-            
-        def createEntryWidget(parent, value):
-            entry = tk.Entry(parent, disabledbackground='white', disabledforeground='black')
-            if type(value) is set:
-                entry.insert(10, list(component[column])[0])
-            else:    
-                entry.insert(10, value)
-            return entry
-        
-        parent = ttk.Frame(self)
-        l = tk.Label(parent, text='Merged')
-        l.grid(row=0, column=0)
-        
-        mergeFields = {}
-        for c, column in enumerate(columns):
-            label = tk.Label(parent, text=column)
-            label.grid(row=1, column=c) 
 
-            if column == 'Designator':
-                widget = createTextWidget(parent, text=component['Designator'])
-                widget.config(state=tk.DISABLED)
-            elif column == 'Quantity':
-                widget = createEntryWidget(parent, component[column])
-                widget.config(state=tk.DISABLED)
-            elif len(component[column]) == 1:
-                widget = createEntryWidget(parent, component[column])
+        def createEntryWidget(parent, value):
+            entry = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY)
+            if type(value) is set:
+                entry.SetValue(list(component[column])[0])
             else:
-                widget = ttk.Combobox(parent)
-                widget['values'] = list(component[column])                       
-            widget.grid(row=2, column=c, sticky=tk.N)
+                entry.SetValue(str(value))
+            return entry
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        label = wx.StaticText(self, label='Merged')
+        sizer.Add(label, 0, wx.EXPAND | wx.ALL, 5)
+        flex_grid_sizer = wx.FlexGridSizer(len(columns), 5, 5)
+        #first line
+        for column in columns:
+            label = wx.StaticText(self, label=column)
+            flex_grid_sizer.Add(label, 1, wx.EXPAND | wx.ALL, 5)
+        # second line
+        mergeFields = {}
+        for column in columns:
+            if column == 'Designator':
+                widget = wx.TextCtrl(self, wx.ID_ANY, component['Designator'], wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY)
+            elif column == 'Quantity':
+                widget = createEntryWidget(flex_grid_sizer, component[column])
+            elif len(component[column]) == 1:
+                widget = createEntryWidget(flex_grid_sizer, component[column])
+            else:
+                widget = wx.ComboBox(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                     list(component[column]))
+            flex_grid_sizer.Add(widget, 1, wx.EXPAND | wx.ALL, 5)
             mergeFields[column] = widget
-            
-        parent.pack()        
-        return mergeFields
-                
+
+        sizer.Add(flex_grid_sizer, 1, wx.EXPAND | wx.ALL, 5)
+        return [sizer, mergeFields]
+
     def _createButtons(self, combos, merged):
-        parent = ttk.Frame(self)
         def doMerge():
             self.result = self.merge(combos, merged)
-            self.withdraw()
-            self.update_idletasks()
-            self.cancel()
+            self.EndModal(1)
 
-        button = tk.Button(parent, text='Done', width=10, command=doMerge)
-        button.grid(row=0, column=0) 
-        
-        button = tk.Button(parent, text='Cancel', width=10, command=self.cancel)
-        button.grid(row=0, column=1)
-        parent.pack(side=tk.RIGHT) 
-        
+        parent = wx.BoxSizer(wx.HORIZONTAL)
 
+        done_button = wx.Button(self, wx.ID_ANY, u"Done", wx.DefaultPosition, wx.DefaultSize, 0)
+        done_button.Bind(wx.EVT_BUTTON, lambda x: doMerge())
+        parent.Add(done_button)
 
+        cancel_button = wx.Button(self, wx.ID_CANCEL, u"Cancel", wx.DefaultPosition, wx.DefaultSize, 0)
+        parent.Add(cancel_button)
+        return parent
 
 
-
-
-  
-    
-   
+if __name__ == "__main__":
+    app = wx.App()
+    # Create open file dialog
+    frame = MergeDialog(None, ["Quantity", "Capacitance"],
+                        [{"Quantity": "2", "Capacitance": "10", 'Designator': "asdf"},
+                         {"Quantity": "10", "Capacitance": "20", 'Designator': "asdf"}])
+    frame.ShowModal()
+    app.MainLoop()

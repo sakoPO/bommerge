@@ -152,19 +152,20 @@ class Partkeepr:
         encoded_parameters = {}
         for parameter in parameters:
             name = parameter['name']
-            if name == "Voltage":
-                encoded_parameters[name] = self.__extract_part_parameter_voltage(parameter)
-            elif name == "Capacitance":
-                encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
-            elif name == "Tolerance":
-                encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
-            elif name == "Resistance":
-                encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
-            else:
-                if parameter["valueType"] == "string":
-                    encoded_parameters[name] = parameter["stringValue"]
+            if name not in ["Altium PcbLib", "Altium SchLib", "Invoice Number"]:
+                if name == "Voltage":
+                    encoded_parameters[name] = self.__extract_part_parameter_voltage(parameter)
+                elif name == "Capacitance":
+                    encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
+                elif name == "Tolerance":
+                    encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
+                elif name == "Resistance":
+                    encoded_parameters[name] = self.__decode_part_numeric_parameter(parameter)
                 else:
-                    encoded_parameters[name] = self.__decode_part_numeric_parameter_to_string(parameter)
+                    if parameter["valueType"] == "string":
+                        encoded_parameters[name] = parameter["stringValue"]
+                    else:
+                        encoded_parameters[name] = self.__decode_part_numeric_parameter_to_string(parameter)
         return encoded_parameters
 
     def __extract_part_price(self, part):
@@ -176,7 +177,11 @@ class Partkeepr:
             distributor = part["distributors"]
             if len(distributor) == 1:
                 distributor = distributor[0]
-                return distributor['price']
+                price = distributor['price']
+                if price is None:
+                    return 0
+                else:
+                    return price
         except IndexError:
             return 0
 
@@ -200,13 +205,14 @@ class Partkeepr:
     def __decode_part_numeric_parameter(self, parameter):
         if parameter['valueType'] != 'numeric':
             raise
-        value = Decimal(parameter['value'])
-        if parameter['siPrefix'] is not None:
-            base = Decimal(parameter['siPrefix']['base'])
-            exponent = Decimal(parameter['siPrefix']['exponent'])
-            multiplier = base ** exponent
-            value = value * multiplier
-        return value
+        if parameter['value'] is not None:
+            value = Decimal(parameter['value'])
+            if parameter['siPrefix'] is not None:
+                base = Decimal(parameter['siPrefix']['base'])
+                exponent = Decimal(parameter['siPrefix']['exponent'])
+                multiplier = base ** exponent
+                value = value * multiplier
+            return value
 
     def __decode_part_numeric_parameter_to_string(self, parameter):
         if parameter['valueType'] != 'numeric':

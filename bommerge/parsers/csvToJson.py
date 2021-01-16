@@ -20,20 +20,23 @@ def isCapacitor(component):
     if 'BOM Group' in component:
         if component['BOM Group'] == 'Capacitors':
             return True
-    if 'Capacitance' in component:
-        if component['Capacitance'] != '':
-            return True    
     if removeNumberFromDesignator(component['Designator']) == 'C':
         return True
+    if 'Capacitance' in component:
+        if component['Capacitance'] != '':
+            return True
     return False
 
 
 def isResistor(component):
+    if 'BOM Group' in component:
+        if component['BOM Group'] == 'Resistors':
+            return True
+    if removeNumberFromDesignator(component['Designator']) == 'R':
+            return True
     if 'Resistance' in component:
         if component['Resistance'] != '':
             return True
-    if removeNumberFromDesignator(component['Designator']) == 'R':
-        return True
     return False
 
 
@@ -156,6 +159,8 @@ def decodeCapacitor(component):
         return ''
 
     def getManufacturerPartNumber(component):
+        if 'Manufacturer Part Number' in component and len(component['Manufacturer Part Number']) > 0:
+            return component['Manufacturer Part Number']
         capacitorFamilyList = [r'(GCM[A-Za-z0-9]+)', r'C0603', r'C0805']
         for field in ['Comment', 'Description']: 
             if field in component:
@@ -210,6 +215,8 @@ def decodeResistor(component):
         return ''
 
     def getManufacturerPartNumber(component):
+        if 'Manufacturer Part Number' in component and len(component['Manufacturer Part Number']) > 0:
+            return component['Manufacturer Part Number']
         resistorFamilyList = [r'(CRCW[A-Za-z0-9]+)']
         for field in ['Comment', 'Description']: 
             if field in component:

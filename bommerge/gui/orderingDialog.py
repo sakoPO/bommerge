@@ -1,19 +1,21 @@
-import gui.componentListWidget as componentList
+import gui.widgets.componentListWidget as componentList
 from gui.widgets import order_summary
 from utils import files
+
 try:
     import Tkinter as tk
     import ttk
 except ImportError:
     import tkinter as tk
     from tkinter import ttk
-    
+
 
 def cmp(a, b):
     return (a > b) - (a < b)
 
+
 class ComponentGroup(ttk.Frame):
-    def __init__(self, parent, name, columns, components, validator_function = None, on_selection=None):
+    def __init__(self, parent, name, columns, components, validator_function=None, on_selection=None):
         ttk.Frame.__init__(self, parent)
         self.parent = parent
         self.name = name
@@ -22,19 +24,18 @@ class ComponentGroup(ttk.Frame):
         self.create_gui(columns)
         self.refresh_widget()
 
-#        if self.name == 'Capacitors':
-#            self.value_key = 'Capacitance'
-            #from partnameDecoder import capacitors as capacitorResolver
-#            self.resolver = None#capacitorResolver
-#        elif self.name == 'Resistors':
-#            self.value_key = 'Resistance'
-#            from partnameDecoder import resistors as resistorResolver
-#            self.resolver = resistorResolver
-#        else:
+        #        if self.name == 'Capacitors':
+        #            self.value_key = 'Capacitance'
+        # from partnameDecoder import capacitors as capacitorResolver
+        #            self.resolver = None#capacitorResolver
+        #        elif self.name == 'Resistors':
+        #            self.value_key = 'Resistance'
+        #            from partnameDecoder import resistors as resistorResolver
+        #            self.resolver = resistorResolver
+        #        else:
         self.value_key = 'Comment'
         self.resolver = None
         self.on_selection_change = on_selection
-
 
     def create_gui(self, columns):
         def on_selection_change():
@@ -46,10 +47,10 @@ class ComponentGroup(ttk.Frame):
                                                            on_item_double_click=self.on_item_double_click)
         self.widget.addColumns(columns)
         self.widget.pack(expand=True, fill=tk.BOTH)
-#        self.button = tk.Button(self, text='Merge', width=25, command=self.on_merge_button_pressed)
-#        self.button.config(state=tk.DISABLED)
-#        self.button.pack()
 
+    #        self.button = tk.Button(self, text='Merge', width=25, command=self.on_merge_button_pressed)
+    #        self.button.config(state=tk.DISABLED)
+    #        self.button.pack()
 
     def sort(self):
         if self.name == 'Capacitors':
@@ -58,7 +59,6 @@ class ComponentGroup(ttk.Frame):
             self.components.sort(key=lambda x: resistor.convertResistanceToOhms(x['Resistance']))
         else:
             self.components.sort()
-
 
     def refresh_widget(self):
         self.widget.removeAllItems()
@@ -69,14 +69,12 @@ class ComponentGroup(ttk.Frame):
                 self.widget.addItem(str(i), component, component['validation_status'])
             else:
                 self.widget.addItem(str(i), component)
-    
 
     def remove_components_by_indices(self, indices_list):
         indices_list.sort(reverse=True)
         for index in indices_list:
             tmp = self.components.pop(index)
             print("Removing component " + str(tmp[self.value_key]) + ', With index: ' + str(index))
-        
 
     def on_merge_button_pressed(self):
         components_to_merge = []
@@ -91,7 +89,6 @@ class ComponentGroup(ttk.Frame):
             self.components.append(merged_component)
             self.sort()
             self.refresh_widget()
-
 
     def on_item_double_click(self, event):
         item = self.widget.getSelectedIndices()
@@ -131,14 +128,13 @@ def add_component_price(component):
                 component['OrderQuantity'] = order_quantity
     except TypeError:
         print(component)
-            
 
 
-class SuppliersDetailsWidget(ttk.Frame):    
+class SuppliersDetailsWidget(ttk.Frame):
     def __init__(self, parent, distributors, on_order_change):
         ttk.Frame.__init__(self, parent)
         self.components = distributors
-        self.on_order_change = on_order_change        
+        self.on_order_change = on_order_change
         self.supplier = []
         self.create_brief_view()
         self.create_order_quantity()
@@ -150,23 +146,23 @@ class SuppliersDetailsWidget(ttk.Frame):
         pass
 
     def create_order_quantity(self):
-        from gui.widgets.order_quantity import order_quantity
-        self.order_quantity = order_quantity(self, self._on_quantity_change)
+        from gui.widgets.order_quantity import OrderQuantity
+        self.order_quantity = OrderQuantity(self, self._on_quantity_change)
         self.order_quantity.pack(anchor=tk.N + tk.W, padx=10, pady=10)
 
     def create_distributor_selector(self):
-        from gui.widgets.distributor_selector import distributor_selector
-        self.distributor_selector = distributor_selector(self, self._on_distributor_change)
+        from gui.widgets.distributor_selector import DistributorSelector
+        self.distributor_selector = DistributorSelector(self, self._on_distributor_change)
         distributors = ['None']
         for distributor in self.components:
             distributors.append(distributor['Name'])
         self.distributor_selector.activate(distributors)
         self.distributor_selector.pack(anchor=tk.N + tk.W)
-  
+
     def create_detail_view(self, distributor):
-      #  print("------------------------------------------------------")
-      #  print( distributor)
-        from gui.widgets.supplier_info import supplier_info as supplier_info
+        #  print("------------------------------------------------------")
+        #  print( distributor)
+        from gui.widgets.supplier_info import SupplierInfo as supplier_info
         supplier = supplier_info(self, distributor['Name'], distributor['Components'], self._on_change)
         supplier.pack(anchor=tk.N, expand=True, fill=tk.X, padx=5, pady=5, ipadx=5, ipady=5)
         self.supplier.append(supplier)
@@ -186,7 +182,7 @@ class SuppliersDetailsWidget(ttk.Frame):
         if price:
             return price * order_quantity
         return None
-        
+
     def get_component_by_distributor(self, distributor):
         print("Loking for component from: " + distributor)
         for i, component in enumerate(self.components):
@@ -199,13 +195,13 @@ class SuppliersDetailsWidget(ttk.Frame):
             if self.validate_quantity(component) == False:
                 self.order_quantity.make_invalid()
                 return
-           
+
         self.order_quantity.make_valid()
         price = 0 if distributor == 'None' else self.calculate_price(component)
         quantity = 0 if distributor == 'None' else self.order_quantity.get()
         if self.on_order_change:
             self.on_order_change(distributor, quantity, price)
-            
+
     def _on_distributor_change(self, distributor):
         self._update_order_info(distributor)
 
@@ -224,9 +220,10 @@ class Bookmark(ttk.Frame):
         self.active_component_index = 0
         self.component_frame = ComponentGroup(self, group, columns_to_display, components, validator, self.on_selection)
         self.component_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
-        self.supplier_frame = [] 
+        self.supplier_frame = []
         for component in components:
-            self.supplier_frame.append(SuppliersDetailsWidget(self, component['Distributors'], self.on_component_order_change))
+            self.supplier_frame.append(
+                SuppliersDetailsWidget(self, component['Distributors'], self.on_component_order_change))
         self.supplier_frame[0].pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
     def on_selection(self, index):
@@ -245,7 +242,7 @@ class Bookmark(ttk.Frame):
         self.component_frame.refresh_widget()
         if self.on_order_update:
             self.on_order_update()
-        
+
 
 class OrderWidget_(ttk.Notebook):
     def __init__(self, parent, components, on_order_update):
@@ -258,7 +255,8 @@ class OrderWidget_(ttk.Notebook):
         self.supplier_frame = {}
         self.procees_components()
         self.create_bookmarks()
-#        self.pack(expand=True, fill=tk.BOTH)
+
+    #        self.pack(expand=True, fill=tk.BOTH)
 
     def _remove_keys_if_exist(self, keys, keys_to_remove):
         for key in keys_to_remove:
@@ -268,13 +266,14 @@ class OrderWidget_(ttk.Notebook):
 
     def procees_components(self):
         def combine(component, keys):
-#            print("Combining parameters for: " + str(component))
+            #            print("Combining parameters for: " + str(component))
             result = ''
             for key in reversed(keys):
                 result = str(component[key]) + '; ' + result
             return result
-                
-        columns_to_combine = {'Resistors': ['Resistance', 'Tolerance', 'Case'], 'Capacitors': ['Capacitance', 'Voltage', 'Dielectric Type', 'Tolerance', 'Case']}
+
+        columns_to_combine = {'Resistors': ['Resistance', 'Tolerance', 'Case'],
+                              'Capacitors': ['Capacitance', 'Voltage', 'Dielectric Type', 'Tolerance', 'Case']}
         for component_group in self.components.keys():
             for component in self.components[component_group]:
                 component['Price'] = 0
@@ -302,7 +301,7 @@ class OrderWidget_(ttk.Notebook):
                 supplier_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
             else:
                 supplier_frame.pack_forget()
-        
+
     def create_bookmarks(self):
         def sort(x):
             key = {'Capacitors': 1, 'Resistors': 2, 'Others': 100}
@@ -315,11 +314,13 @@ class OrderWidget_(ttk.Notebook):
         for group in components_group:
             if self.components[group]:
                 if group == 'Resistors':
-                    columns_to_display = ['Quantity', 'Parameters', 'Manufacturer Part Number', 'Order Quantity', 'Price', 'Supplier']
-                    validator = None#validate_resistor
+                    columns_to_display = ['Quantity', 'Parameters', 'Manufacturer Part Number', 'Order Quantity',
+                                          'Price', 'Supplier']
+                    validator = None  # validate_resistor
                 elif group == 'Capacitors':
-                    columns_to_display = ['Quantity', 'Parameters', 'Manufacturer Part Number', 'Order Quantity', 'Price', 'Supplier']
-                    validator = None#validate_capacitor
+                    columns_to_display = ['Quantity', 'Parameters', 'Manufacturer Part Number', 'Order Quantity',
+                                          'Price', 'Supplier']
+                    validator = None  # validate_capacitor
                 elif group == 'Others':
                     keys = set()
                     for component in self.components[group]:
@@ -329,12 +330,15 @@ class OrderWidget_(ttk.Notebook):
                     validator = None
                 else:
                     columns_to_display = self.create_component_columns(list(self.components[group][0].keys()))
-                    validator = None                    
-                columns_to_display = self._remove_keys_if_exist(columns_to_display, ['Manufacturer', 'Description', 'Footprint', 'LibRef', 'Distributors'])
+                    validator = None
+                columns_to_display = self._remove_keys_if_exist(columns_to_display,
+                                                                ['Manufacturer', 'Description', 'Footprint', 'LibRef',
+                                                                 'Distributors'])
 
-                bookmark_layout = Bookmark(self, group, columns_to_display, self.components[group], validator, self.on_order_update)
+                bookmark_layout = Bookmark(self, group, columns_to_display, self.components[group], validator,
+                                           self.on_order_update)
                 bookmark_layout.pack()
-                self.add(bookmark_layout, text=group)    
+                self.add(bookmark_layout, text=group)
 
 
 class OrderWidget(ttk.Frame):
@@ -344,7 +348,8 @@ class OrderWidget(ttk.Frame):
         self.components = files.load_json_file(filename)
         self.order = {}
         self.notebook = OrderWidget_(self, self.components, self.on_order_update)
-        self.order_summary = order_summary.order_summary(self, ['TME', 'Farnel', 'Mouser', 'RS Components', 'PartKeepr'])
+        self.order_summary = order_summary.OrderSummary(self,
+                                                         ['TME', 'Farnel', 'Mouser', 'RS Components', 'PartKeepr'])
         self.notebook.pack(expand=True, fill=tk.BOTH)
         self.order_summary.pack(side=tk.BOTTOM, expand=True, fill=tk.X)
         self.pack(expand=True, fill=tk.BOTH)
@@ -363,22 +368,20 @@ class OrderWidget(ttk.Frame):
         self.update_result()
         self.parent.destroy()
 
-
     def calculate_order_price(self):
         new_order = {}
         for group in self.components.keys():
             for component in self.components[group]:
                 supplier = component['Supplier']
                 if supplier in new_order:
-                   new_order[supplier] = new_order[supplier] + component['Price']
+                    new_order[supplier] = new_order[supplier] + component['Price']
                 else:
-                   new_order[supplier] = component['Price']
+                    new_order[supplier] = component['Price']
         for key in new_order.keys():
             self.order[key] = new_order[key]
         for key in self.order.keys():
             if key not in new_order.keys():
                 self.order[key] = 0
-
 
     def on_order_update(self):
         self.calculate_order_price()
@@ -389,7 +392,6 @@ class OrderWidget(ttk.Frame):
             if shop not in ['', 'None']:
                 print(shop)
                 self.order_summary.update(shop, self.order[shop], total_price)
-
 
     def update_result(self):
         def get_shop_url(component):
@@ -403,18 +405,25 @@ class OrderWidget(ttk.Frame):
             if 'Manufacturer Part Number' in component:
                 return component['Manufacturer Part Number']
             return ''
+
         def get_shop_part_number(component):
-            for distributor in component['Distributors']:
-                if distributor['Name'] == component['Supplier']:
-                    for component in distributor['Components']:
-                        if 'Active' in component and  component['Active'] == True:
-                            return component['Symbol']['SymbolTME']
+            try:
+                for distributor in component['Distributors']:
+                    if distributor['Name'] == component['Supplier']:
+                        for component in distributor['Components']:
+                            if 'Active' in component and component['Active'] == True:
+                                return component['Symbol']['SymbolTME']
+            except KeyError:
+                print(component)
+                return "Error"
 
         self.result = {}
         for group in self.components.keys():
             for component in self.components[group]:
                 supplier = component['Supplier']
-                part = {'Manufacturer Part Number' : get_manufacturer_part_number(component), 'Quantity' : component['Order Quantity'], 'Shop URL': get_shop_url(component), 'Shop Part Number': get_shop_part_number(component)}
+                part = {'Manufacturer Part Number': get_manufacturer_part_number(component),
+                        'Quantity': component['Order Quantity'], 'Shop URL': get_shop_url(component),
+                        'Shop Part Number': get_shop_part_number(component)}
                 if supplier in self.result:
                     self.result[supplier].append(part)
                 else:
@@ -426,7 +435,7 @@ def main(filename):
     root.title("BOM Merger")
     manualMerger = OrderWidget(root, filename)
     root.mainloop()
-    
+
 
 if __name__ == "__main__":
-    main("orderingDialogTestData.json")    
+    main("orderingDialogTestData.json")

@@ -11,38 +11,38 @@ except:
     from bommerge.components import voltage
     from bommerge.components import tolerance
 
-from gui.projectConfigurationWidget import ProjectConfigurationWidget
 from parsers import csvToJson
 from utils import files
+from utils import project
 import os
 from decimal import *
+import shopSelect
+from gui.projectConfigurationWidget import ProjectConfigurationWidget
+from gui.mainWindow import MainFrame
+import wx
+import manualMerger
 
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
-
-
-def loadProject(filename):
-    project = files.load_json_file(filename)
-    project_directory = files.get_directory_from_path(filename)
-    print("Loading project: " + project_directory)
-    for file in project:
-        if not os.path.isabs(file['filename']):
-            file['filename'] = os.path.normpath(os.path.join(project_directory, file['filename']))
-    print(project)
-    return project
+# try:
+#     import Tkinter as tk
+#     import ttk
+# except ImportError:
+#     import tkinter as tk
+#     from tkinter import ttk
 
 
-def saveProject(filename, project):
-    project_directory = files.get_directory_from_path(filename)
-    for file in project:
-        normalized_path = os.path.normpath(file['filename'])
-        print(normalized_path)
-        file['filename'] = os.path.relpath(normalized_path, project_directory)
-    files.save_json_file(filename, project)
+class ProjectConfigWidget(ProjectConfigurationWidget):
+    def load_project(self, filename):
+        return project.load(filename)
+
+    def save_project_file(self, filename):
+        project_file_list = self.files_widget.create_file_list()
+        return project.save(filename, project_file_list)
+
+
+class MainWindow(MainFrame):
+    def project_config_widget(self, path=None):
+        return ProjectConfigWidget(self, path)
+
 
 
 def read_configuration():
@@ -84,12 +84,6 @@ def find_component(components_group, group, tme_config):
                                                 'Voltage': voltage.string_to_voltage(component['Voltage']),
                                                 'Dielectric Type': component['Dielectric Type']}
                         found = shop.find_capacitor_by_parameters(capacitor_parameters)
-                        if found:
-                            for part in found:
-                                if 'Voltage' in part['Parameters']:
-                                    part['Parameters']['Voltage'] = voltage.volts_to_string(part['Parameters']['Voltage'])
-                                if 'Capacitance' in part['Parameters']:
-                                    part['Parameters']['Capacitance'] = capacitor.farads_to_string(part['Parameters']['Capacitance'])
                     except InvalidOperation:
                         print(component)
                         raise
@@ -105,12 +99,6 @@ def find_component(components_group, group, tme_config):
                                                'Case': component['Case'],
                                                'Tolerance': tolerance.string_to_tolerance(component['Tolerance'])}
                         found = shop.find_resistor_by_parameters(resistor_parameters)
-                        if found:
-                            for part in found:
-                                if 'Resistance' in part['Parameters']:
-                                    part['Parameters']['Resistance'] = resistor.ohms_to_string(part['Parameters']['Resistance'])
-                                if 'Tolerance' in part['Parameters']:
-                                    part['Parameters']['Tolerance'] = tolerance.tolerance_to_string(part['Parameters']['Tolerance'])
                     except TypeError:
                         print(component)
                         raise
@@ -119,6 +107,23 @@ def find_component(components_group, group, tme_config):
                     found = shop.find_component(component['Comment'])
                 else:
                     found = None
+
+            if found:
+                if group == "Capacitors":
+                    for part in found:
+                        if 'Voltage' in part['Parameters']:
+                            part['Parameters']['Voltage'] = voltage.volts_to_string(part['Parameters']['Voltage'])
+                        if 'Capacitance' in part['Parameters']:
+                            part['Parameters']['Capacitance'] = capacitor.farads_to_string(
+                                part['Parameters']['Capacitance'])
+                elif group == "Resistors":
+                    for part in found:
+                        if 'Resistance' in part['Parameters']:
+                            part['Parameters']['Resistance'] = resistor.ohms_to_string(
+                                part['Parameters']['Resistance'])
+                        if 'Tolerance' in part['Parameters']:
+                            part['Parameters']['Tolerance'] = tolerance.tolerance_to_string(
+                                part['Parameters']['Tolerance'])
 
             if "Distributors" not in component:
                 component["Distributors"] = []
@@ -181,7 +186,7 @@ def remove_DNF_and_empty_components(components):
 def mergeProject(project, workingDirectory, nogui):
     import os
     import automaticMerger
-    import guiBOM as manual_merger
+    #import guiBOM as manual_merger
 
     directory = workingDirectory + "/tmp"
 
@@ -195,10 +200,16 @@ def mergeProject(project, workingDirectory, nogui):
 
     components = automaticMerger.merge(project)
     if nogui is None:
-        root = tk.Tk()
-        root.title("BOM Merger")
-        merger = manual_merger.ManualMerger(root, components)
-        root.mainloop()
+        app = wx.App()
+        #root = tk.Tk()
+        #root.title("BOM Merger")
+        merger = manualMerger.MainWindow(None)
+        for components_group in components:
+            tmp = manualMerger.ComponentsGroup(components_group, components[components_group])
+            merger.add_components_group(tmp)
+        merger.Show()
+        app.MainLoop()
+        #root.mainloop()
         if merger.result:
             components = merger.components
         else:
@@ -215,31 +226,26 @@ def mergeProject(project, workingDirectory, nogui):
         print(tme_config)
         ged_distributor_stock(components, tme_config)
         filename = directory + '/merged.json'
+        print(components)
         files.save_json_file(filename, components)
 
-        from gui import orderingDialog
-        root = tk.Tk()
-        orderingWidget = orderingDialog.OrderWidget(root, filename)
-        root.mainloop()
-        filename = directory + '/order.json'
-        files.save_json_file(filename, orderingWidget.components)
-        if orderingWidget.result:
-            for supplier in orderingWidget.result.keys():
-                csvExporter.save_list(orderingWidget.result[supplier],
-                                      workingDirectory + '/' + supplier + '_human_readable.csv')
-                order_list = []
-                for component in orderingWidget.result[supplier]:
-                    order_list.append({'Part number': component['Shop Part Number'], 'Quantity': component['Quantity']})
-                csvExporter.save_list(order_list, workingDirectory + '/' + supplier + '.csv', write_header=False)
+        shopSelect.shop_selector(workingDirectory, filename)
 
+        # from gui import orderingDialog
+        # root = tk.Tk()
+        # orderingWidget = orderingDialog.OrderWidget(root, filename)
+        # root.mainloop()
+        # filename = directory + '/order.json'
+        # files.save_json_file(filename, orderingWidget.components)
+        # if orderingWidget.result:
+        #     for supplier in orderingWidget.result.keys():
+        #         csvExporter.save_list(orderingWidget.result[supplier],
+        #                               workingDirectory + '/' + supplier + '_human_readable.csv')
+        #         order_list = []
+        #         for component in orderingWidget.result[supplier]:
+        #             order_list.append({'Part number': component['Shop Part Number'], 'Quantity': component['Quantity']})
+        #         csvExporter.save_list(order_list, workingDirectory + '/' + supplier + '.csv', write_header=False)
 
-class ProjectConfigWidget(ProjectConfigurationWidget):
-    def load_project(self, filename):
-        return loadProject(filename)
-
-    def save_project_file(self, filename):
-        project = self.files_widget.create_file_list()
-        return saveProject(filename, project)
 
 
 def first_run():
@@ -259,20 +265,33 @@ def main():
     if first_run():
         pass
 
-    project = None
+    bommerge_project = None
     if args.proj:
-        project = loadProject(args.proj)
+        bommerge_project = project.load(args.proj)
         working_directory = files.get_directory_from_path(args.proj)
 
-    if project is None:
-        projectConfigGui = ProjectConfigWidget()
-        if projectConfigGui.result:
-            working_directory = files.get_directory_from_path(projectConfigGui.result)
-            project = loadProject(projectConfigGui.result)
+    app = wx.App()
+    if bommerge_project is None:
+        app = wx.App()
+        project_config_gui = ProjectConfigWidget(None)
+        project_config_gui.ShowModal()
+        app.MainLoop()
+        if project_config_gui.result:
+            working_directory = files.get_directory_from_path(project_config_gui.result)
+            bommerge_project = project.load(project_config_gui.result)
 
-    if project:
-        mergeProject(project, working_directory, args.nogui)
+    if bommerge_project:
+        mergeProject(bommerge_project, working_directory, args.nogui)
+
+
+def test_gui():
+    app = wx.App()
+    # Create open file dialog
+    frame = MainWindow(None)
+    frame.Show()
+    app.MainLoop()
 
 
 if __name__ == "__main__":
+    #test_gui()
     main()

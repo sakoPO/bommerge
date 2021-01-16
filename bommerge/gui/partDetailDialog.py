@@ -66,7 +66,7 @@ class PartDetailDialog(wx.Dialog):
             entry = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY)
             entry.SetMinSize(wx.Size(80, 25))
             if column in decoded and decoded[column]:
-                entry.SetValue(component[column])
+                entry.SetValue(decoded[column])
             flex_grid_sizer.Add(entry, 0, wx.EXPAND | wx.ALL, 3)
         return flex_grid_sizer
 

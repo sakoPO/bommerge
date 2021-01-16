@@ -1,4 +1,4 @@
-from gui import componentListWidget as componentList
+from bommerge.gui.widgets import componentListWidget as componentList
 from gui import mergeDialog as mergeDialog
 from gui import partDetailDialog as partDetailDialog
 from components import capacitor
@@ -10,67 +10,6 @@ try:
 except ImportError:
     import tkinter as tk
     from tkinter import ttk
-
-
-def validate(part, partname_resolver, required_fields, fields_to_check):
-    def has_required_fields(part):
-        for field in required_fields:
-           if not part[field] or part[field] == '':
-               return False
-        return True
-
-    def validateParameters(part, resolved):
-        for field in fields_to_check:
-            if field in resolved:
-                if field in ['Capacitance']:
-                    if capacitor.convert_capacitance_co_farads(part[field]) != capacitor.convert_capacitance_co_farads(resolved[field]):
-                        print(resolved)
-                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
-                        return False
-                elif field in ['Resistance']:
-                    if resistor.convert_resistance_to_ohms(part[field]) != resistor.convert_resistance_to_ohms(resolved[field]):
-                        print(resolved)
-                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
-                        return False
-                elif field in ['Voltage']:
-                    if part[field].replace('VDC', 'V') != resolved[field].replace('VDC', 'V'):
-                        print(resolved)
-                        print(str(field) + ' ' + str(part[field]) + ' ' + resolved[field])
-                        return False
-                elif part[field] != resolved[field]:
-                    print(resolved)
-                    print(str(field))
-                    return False
-        return True
-
-    validation_status = None
-    if not has_required_fields(part):
-        validation_status = 'MissingParameters'
-
-    if part['Manufacturer Part Number']:
-        resolvedParameters = partname_resolver.resolve(part['Manufacturer Part Number'])
-        if resolvedParameters:
-            if validateParameters(part, resolvedParameters) == False:
-                validation_status = 'IncorrectParameters'
-        else:
-            validation_status = 'PartnumberDecoderMissing'
-    if validation_status:
-        print('Part validation failded, status: ' + validation_status)
-    return validation_status
-
-
-def validate_resistor(part):
-    from partnameDecoder import resistors as resistorResolver
-    required_fields = ['Resistance', 'Case']
-    fields_to_check = ['Resistance', 'Case', 'Tolerance']
-    return validate(part, resistorResolver, required_fields, fields_to_check)
-
-
-def validate_capacitor(part):
-    from partnameDecoder import capacitors as capacitorResolver
-    required_fields = ['Capacitance', 'Voltage', 'Case']
-    fields_to_check = ['Capacitance', 'Voltage', 'Case', 'Tolerance']
-    return validate(part, capacitorResolver, required_fields, fields_to_check)
 
 
 class ComponentGroup(ttk.Frame):
@@ -177,9 +116,11 @@ class ComponentGroup(ttk.Frame):
         for i in selected_indices:
             components_to_merge.append(self.components[i])
 
-        merged = mergeDialog.MergeDialog(self.parent, self.widget.getDisplayedFieldsNames(), components_to_merge)
+        merged = mergeDialog.MergeDialog(None, self.widget.getDisplayedFieldsNames(), components_to_merge)
+        merged.ShowModal()
         if merged.result:
             self.remove_components_by_indices(selected_indices)
+            print(merged.result)
             merged_component = dict(merged.result)
             self.components.append(merged_component)
             self.sort()
@@ -199,7 +140,9 @@ class ComponentGroup(ttk.Frame):
                 resolved_parameters = self.resolver.resolve(component['Manufacturer Part Number'])
             else:
                 resolved_parameters = None
-        partDetailDialog.PartDetailDialog(self.parent, component, resolved_parameters)
+        dialog = partDetailDialog.PartDetailDialog(None, component, resolved_parameters)
+        dialog.ShowModal()
+
 
 
 class ManualMerger(ttk.Notebook):

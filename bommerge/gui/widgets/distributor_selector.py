@@ -5,7 +5,8 @@ except ImportError:
     import tkinter as tk
     from tkinter import ttk
 
-class distributor_selector(tk.LabelFrame):
+
+class DistributorSelector(tk.LabelFrame):
     def __init__(self, parent, on_distributor_change = None):
         tk.LabelFrame.__init__(self, parent, text="Distributor selection")
         
@@ -41,3 +42,15 @@ class distributor_selector(tk.LabelFrame):
     def get(self):
         val_to_str = ['None', 'PartKeepr', 'TME', 'RS Components', 'Farnel', 'Mouser']
         return val_to_str[self.active_distributor.get() - 1]
+
+
+def test():
+    root = tk.Tk()
+    root.title("BOM Merger")
+    order = DistributorSelector(root, ['TME', 'Farnel', 'Mouser', 'RS Components'])
+    order.pack()
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    test()

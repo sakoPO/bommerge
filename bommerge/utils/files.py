@@ -1,17 +1,23 @@
 import os
-    
-    
+import json
+from decimal import Decimal
+
+
+def default(obj):
+    if isinstance(obj, Decimal):
+        return str(obj)
+    raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
+
+
 def load_json_file(filename):
-    import json
     with open(filename) as inputfile:
        dictionary = json.load(inputfile)
     return dictionary
 
 
 def save_json_file(filename, content):
-    import json
     with open(filename, 'w') as outfile:
-        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': ')))
+        outfile.write(json.dumps(content, indent=4, sort_keys=True, separators=(',', ': '), default=default))
 
 
 def replace_file_extension(filename, newExtension):
@@ -53,3 +59,5 @@ def copy(src, dst):
 def make_directory_if_not_exist(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+

@@ -26,7 +26,7 @@ class range_widget:
         self.amount_label.grid_forget()
         self.price_label.grid_forget()
 
-class price_range(tk.LabelFrame):
+class PriceRange(tk.LabelFrame):
     def __init__(self, parent, ranges):
         tk.LabelFrame.__init__(self, parent, text="Price Range")
         self.amount_label = tk.Label(self, text='Amount')
@@ -50,5 +50,32 @@ class price_range(tk.LabelFrame):
             else:
                 widget.grid_forget()
 
-        
-        
+
+def test():
+    root = tk.Tk()
+    root.title("BOM Merger")
+    PriceRanges= [
+        {
+            "Amount": 100,
+            "Price": 0.24603
+        },
+        {
+            "Amount": 1000,
+            "Price": 0.1673
+        },
+        {
+            "Amount": 3000,
+            "Price": 0.13375
+        },
+        {
+            "Amount": 15000,
+            "Price": 0.12793
+        }]
+    order = PriceRange(root, PriceRanges)
+    order.pack()
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    test()
+

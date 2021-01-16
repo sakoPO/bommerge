@@ -6,7 +6,7 @@ except ImportError:
     from tkinter import ttk
 
 
-class order_quantity(ttk.Frame):
+class OrderQuantity(ttk.Frame):
     def __init__(self, parent, on_quantity_change):
         ttk.Frame.__init__(self, parent)
         self.quantity = tk.StringVar()
@@ -23,12 +23,21 @@ class order_quantity(ttk.Frame):
         except:
             return None
 
-
     def make_invalid(self):
         self.quantity_entry['bg'] = 'red'
-
 
     def make_valid(self):
         self.quantity_entry['bg'] = 'white'
 
 
+def test():
+    root = tk.Tk()
+    root.title("BOM Merger")
+    order = OrderQuantity(root, None)
+
+    order.pack()
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    test()

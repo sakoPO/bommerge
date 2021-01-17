@@ -1,42 +1,32 @@
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
+import wx
 
 
-class Parameters(tk.LabelFrame):
+class Parameters(wx.StaticBoxSizer):
     def __init__(self, parent, parameters):
-        tk.LabelFrame.__init__(self, parent, text="Parameters")
-        self.variable = []
-        self.label = []
+        wx.StaticBoxSizer.__init__(self, wx.VERTICAL, parent, label="Parameters")
+        self.parent = parent
+        self.variable = {}
+        self.label = {}
         self.update(parameters)
 
-
-    def _add_parameter(self):
-        self.variable.append(tk.StringVar())
-        self.label.append(tk.Label(self, textvariable=self.variable[-1]))
-
-
     def update(self, parameters):
-        for i in range(len(parameters) - len(self.label)):
-            self._add_parameter()
-
-        for i, parameter in enumerate(parameters):
+        for parameter in parameters:
             if parameters[parameter] is not None:
-                self.variable[i].set(parameter + ': ' + parameters[parameter])
+                self.variable[parameter] = parameter + ': ' + parameters[parameter]
+                if parameter in self.label:
+                    self.label[parameter].SetLabel(self.variable[parameter])
+                else:
+                    self.label[parameter] = wx.StaticText(self.parent, label=self.variable[parameter])
+                    self.Add(self.label[parameter], 0, wx.ALL, 3)
 
-        for i, label in enumerate(self.label):
-            if i < len(parameters):
-                label.grid(row=i, sticky=tk.W, padx=10)
-            else:
-                label.grid_forget()
+        for label in self.label:
+            self.label[label].Show(label in parameters)
 
 
 def test():
-    root = tk.Tk()
-    root.title("BOM Merger")
+    app = wx.App()
+    frame = wx.Frame(None, id=wx.ID_ANY, title=u"test", pos=wx.DefaultPosition, size=wx.Size(500, 300),
+                     style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
     parameters = {
         "Capacitance": "10uF",
         "Capacitors series": "GRM",
@@ -52,9 +42,10 @@ def test():
         "Tolerance": "10",
         "Type of capacitor": "ceramic"
     }
-    order = Parameters(root, parameters)
-    order.pack()
-    root.mainloop()
+    order = Parameters(frame, parameters)
+    frame.SetSizer(order)
+    frame.Show()
+    app.MainLoop()
 
 
 if __name__ == "__main__":

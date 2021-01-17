@@ -1,20 +1,31 @@
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
+import wx
 
-class PriceWidget(ttk.Frame):
+
+class PriceWidget(wx.BoxSizer):
     def __init__(self, parent, shop_name):
-        ttk.Frame.__init__(self, parent)
-        self.shop_name_label = tk.Label(self, text=shop_name + ':')
-        self.variable = tk.IntVar()
-        self.price_label = tk.Label(self, textvariable=self.variable)
-        self.currency_label = tk.Label(self, text='PLN')
-        self.shop_name_label.pack(side=tk.LEFT)
-        self.price_label.pack(side=tk.LEFT)
-        self.currency_label.pack(side=tk.LEFT)
+        wx.BoxSizer.__init__(self, wx.HORIZONTAL)
+
+        self.shop_name_label = wx.StaticText(parent, label=shop_name + ': ')
+        self.price_label = wx.StaticText(parent, label="")
+        self.currency_label = wx.StaticText(parent, label=' PLN')
+        self.Add(self.shop_name_label)
+        self.Add(self.price_label)
+        self.Add(self.currency_label)
 
     def update(self, value):
-        self.variable.set(value)
+        self.price_label.SetLabel('%.4f' % value)
+
+
+def test():
+    app = wx.App()
+    frame = wx.Frame(None, id=wx.ID_ANY, title=u"test", pos=wx.DefaultPosition, size=wx.Size(500, 300),
+                     style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+    order = PriceWidget(frame, "Test Distributor")
+    frame.SetSizer(order)
+    frame.Show()
+    order.update(10)
+    app.MainLoop()
+
+
+if __name__ == "__main__":
+    test()

@@ -180,3 +180,57 @@ class ScrolledComponentsList_v2(wx.ListView):
 
     def getDisplayedFieldsNames(self):
         return self.treeview['columns']
+
+
+class ScrolledComponentsList_v3(wx.ListView):
+    def __init__(self, parent, columns, on_selection_change, on_item_double_click, flags=0):
+        wx.ListView.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LC_REPORT | flags)
+        self.parent = parent
+        self.on_selection_change = on_selection_change
+        self.on_double_click = on_item_double_click
+        self.data_geter = {}
+        self.columns = columns
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.__on_double_click, id=self.GetId())
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.__on_selection, id=self.GetId())
+
+        for column in columns:
+            self.AppendColumn(column)
+
+    def add_items(self, components, validation_status):
+        for index, component in enumerate(components):
+            item_number = self.GetItemCount()
+            self.InsertItem(item_number, item_number)
+            for i, column in enumerate(self.columns):
+                if column in self.data_geter:
+                    self.SetItem(item_number, i, self.data_geter[column](component))
+                elif column in component:
+                    self.SetItem(item_number, i, str(component[column]))
+
+            if validation_status is None or validation_status[index] is None:
+                self.SetItemBackgroundColour(item_number, wx.WHITE)
+            elif validation_status[index] == "IncorrectParameters":
+                self.SetItemBackgroundColour(item_number, wx.YELLOW)
+            elif validation_status[index] == "IncorrectParameters":
+                self.SetItemBackgroundColour(item_number, wx.RED)
+
+    def add_data_geter(self, getter):
+        self.data_geter = getter
+
+    def remove_all_items(self):
+        self.DeleteAllItems()
+
+    def get_selected_items(self):
+        selected_items = []
+        item = -1
+        while True:
+            item = self.GetNextItem(item, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
+            if item == -1:
+                break
+            selected_items.append(item)
+        return selected_items
+
+    def __on_double_click(self, event):
+        self.on_double_click(event.GetIndex())
+
+    def __on_selection(self, event):
+        self.on_selection_change(event.GetIndex())

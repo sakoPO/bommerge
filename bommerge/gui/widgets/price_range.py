@@ -1,60 +1,41 @@
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
-
-class range_widget:
-    def __init__(self, parent):
-        self.amount_variable = tk.StringVar()
-        self.price_variable = tk.StringVar()
-        self.amount_label = tk.Label(parent, textvariable=self.amount_variable)
-        self.price_label = tk.Label(parent, textvariable=self.price_variable)
+import wx
 
 
-    def update(self, amount, price):
-        self.amount_variable.set(str(amount))
-        self.price_variable.set(str(price))
-
-
-    def grid(self, **kwargs):
-        self.amount_label.grid(kwargs, column=0)
-        self.price_label.grid(kwargs, column=1)
-
-    def grid_forget(self):
-        self.amount_label.grid_forget()
-        self.price_label.grid_forget()
-
-class PriceRange(tk.LabelFrame):
+class PriceRange(wx.StaticBoxSizer):
     def __init__(self, parent, ranges):
-        tk.LabelFrame.__init__(self, parent, text="Price Range")
-        self.amount_label = tk.Label(self, text='Amount')
-        self.price_label =  tk.Label(self, text='Price')
-        self.amount_label.grid(row=0, column=0)       
-        self.price_label.grid(row=0, column=1)
+        wx.StaticBoxSizer.__init__(self, wx.VERTICAL, parent, label="Price Range")
+        self.parent = parent
+        self.amount_label = wx.StaticText(self.parent, label="Amount")
+        self.price_label = wx.StaticText(self.parent, label="Price")
+        self.flex_grid_sizer = wx.FlexGridSizer(2, 2, 20)
+        self.flex_grid_sizer.Add(self.amount_label, 0, wx.ALIGN_CENTER_HORIZONTAL)
+        self.flex_grid_sizer.Add(self.price_label, 0, wx.ALIGN_CENTER_HORIZONTAL)
+        self.Add(self.flex_grid_sizer, 0, wx.ALL, 5)
         self.widgets = []
-        self.update(ranges)       
-
+        self.update(ranges)
 
     def update(self, ranges):
-        for i in range(len(ranges) - len(self.widgets)):
-            self.widgets.append(range_widget(self)) 
-        
-        for i, price_step in enumerate(ranges):
-            self.widgets[i].update(price_step['Amount'], price_step['Price'])
-        
-        for i, widget in enumerate(self.widgets):
-            if i < len(ranges):
-                widget.grid(row=i+1)
+        for i, price_range in enumerate(ranges):
+            if i < len(self.widgets):
+                self.widgets[i][0].SetLabel(str(price_range["Amount"]))
+                self.widgets[i][1].SetLabel(str(price_range["Price"]))
             else:
-                widget.grid_forget()
+                widgets = [wx.StaticText(self.parent, label=str(price_range["Amount"])),
+                           wx.StaticText(self.parent, label=str(price_range["Price"]))]
+                self.widgets.append(widgets)
+                self.flex_grid_sizer.Add(widgets[0], 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+                self.flex_grid_sizer.Add(widgets[1], 0, wx.ALL, 0)
+
+        for i, widgets in enumerate(self.widgets):
+            widgets[0].Show(i < len(ranges))
+            widgets[1].Show(i < len(ranges))
 
 
 def test():
-    root = tk.Tk()
-    root.title("BOM Merger")
-    PriceRanges= [
+    app = wx.App()
+    frame = wx.Frame(None, id=wx.ID_ANY, title=u"test", pos=wx.DefaultPosition, size=wx.Size(500, 300),
+                     style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+    price_ranges = [
         {
             "Amount": 100,
             "Price": 0.24603
@@ -71,11 +52,11 @@ def test():
             "Amount": 15000,
             "Price": 0.12793
         }]
-    order = PriceRange(root, PriceRanges)
-    order.pack()
-    root.mainloop()
+    order = PriceRange(frame, price_ranges)
+    frame.SetSizer(order)
+    frame.Show()
+    app.MainLoop()
 
 
 if __name__ == "__main__":
     test()
-

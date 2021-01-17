@@ -1,46 +1,43 @@
-try:
-    import Tkinter as tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
+import wx
 
 
-class OrderInfo(tk.LabelFrame):
+class OrderInfo(wx.StaticBoxSizer):
     def __init__(self, parent, order_info_data):
-        tk.LabelFrame.__init__(self, parent, text="Order information")
-        self.min_order_label = tk.Label(self, text='Minimal Order:')
-        self.mul_order_label = tk.Label(self, text='Multiplicity:')
-        self.stock_lavel = tk.Label(self, text='Stock level:')
-        self.min_order_label.grid(row=0, column=0)
-        self.mul_order_label.grid(row=1, column=0)
-        self.stock_lavel.grid(row=2, column=0)
+        wx.StaticBoxSizer.__init__(self, wx.VERTICAL, parent, label="Order information")
+        self.min_order_label = wx.StaticText(parent, label='Minimal Order:')
+        self.mul_order_label = wx.StaticText(parent, label='Multiplicity:')
+        self.stock_level = wx.StaticText(parent, label='Stock level:')
+        self.min_order_value = wx.StaticText(parent, label="")
+        self.mul_order_value = wx.StaticText(parent, label="")
+        self.stock_level_value = wx.StaticText(parent, label="")
 
-        self.min_order = tk.StringVar()
-        self.mul_order = tk.StringVar()
-        self.stock_lavel = tk.StringVar()
+        sizer = wx.FlexGridSizer(3, 2, 5, 5)
 
-        self.min_order_value = tk.Label(self, textvariable=self.min_order)
-        self.mul_order_value = tk.Label(self, textvariable=self.mul_order)
-        self.stock_lavel_value = tk.Label(self, textvariable=self.stock_lavel)
-        self.min_order_value.grid(row=0, column=1)
-        self.mul_order_value.grid(row=1, column=1)
-        self.stock_lavel_value.grid(row=2, column=1)
+        border = 0
+        sizer.Add(self.min_order_label, 0, wx.ALL, border)
+        sizer.Add(self.min_order_value, 0, wx.ALL, border)
+        sizer.Add(self.mul_order_label, 0, wx.ALL, border)
+        sizer.Add(self.mul_order_value, 0, wx.ALL, border)
+        sizer.Add(self.stock_level, 0, wx.ALL, border)
+        sizer.Add(self.stock_level_value, 0, wx.ALL, border)
+        self.Add(sizer, 0, wx.ALL | wx.FIXED_MINSIZE, border=6)
         self.update(order_info_data)
 
     def update(self, order_info_data):
-        self.min_order.set(str(order_info_data['MinAmount']))
-        self.mul_order.set(str(order_info_data['Multiples']))
-        self.stock_lavel.set(str(order_info_data['StockCount']))
+        self.min_order_value.SetLabel(str(order_info_data['MinAmount']))
+        self.mul_order_value.SetLabel(str(order_info_data['Multiples']))
+        self.stock_level_value.SetLabel(str(order_info_data['StockCount']))
 
 
 def test():
-    root = tk.Tk()
-    root.title("BOM Merger")
+    app = wx.App()
+    frame = wx.Frame(None, id=wx.ID_ANY, title=u"test", pos=wx.DefaultPosition, size=wx.Size(500, 300),
+                     style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
     order_info = {"MinAmount": 1, "Multiples": 1, "StockCount": 1}
-    order = OrderInfo(root, order_info)
-    order.pack()
-    root.mainloop()
+    order = OrderInfo(frame, order_info)
+    frame.SetSizer(order)
+    frame.Show()
+    app.MainLoop()
 
 
 if __name__ == "__main__":

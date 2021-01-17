@@ -1,39 +1,43 @@
+import wx
+
 try:
-    import Tkinter as tk
-    import ttk
+    from gui.widgets.priceWidget import PriceWidget
 except ImportError:
-    import tkinter as tk
-    from tkinter import ttk
-
-from gui.widgets.priceWidget import PriceWidget
+    from .priceWidget import PriceWidget
 
 
-class OrderSummary(tk.LabelFrame):
+class OrderSummary(wx.StaticBoxSizer):
     def __init__(self, parent, shops_list):
-        tk.LabelFrame.__init__(self, parent, text="Order summary")
-        self.total_price_label = PriceWidget(self, 'Total price')
+        wx.StaticBoxSizer.__init__(self, wx.HORIZONTAL, parent, label="Order summary")
+        self.parent = parent
+        self.total_price_label = PriceWidget(parent, 'Total price')
         self.shop_price_label = {}
+        self.flex_grid_sizer = wx.FlexGridSizer(3, 2, 5, 15)
         self.create_shop_label(shops_list)
-        self.total_price_label.grid(column=100, row=2, padx=8, pady=2)
+        self.Add(self.flex_grid_sizer, 0, wx.ALL, 5)
+        self.Add(self.total_price_label, 0, wx.ALL, 5)
 
     def create_shop_label(self, shops):
         for i, shop in enumerate(shops):
-            label = PriceWidget(self, shop)
-            label.grid(column=int(i / 3), row=i % 3, padx=8, pady=2, sticky=tk.W)
+            label = PriceWidget(self.parent, shop)
+            self.flex_grid_sizer.Add(label)
             self.shop_price_label[shop] = label
 
     def update(self, shop, price, total_price):
         self.shop_price_label[shop].update(price)
         self.total_price_label.update(total_price)
+        self.Layout()
 
 
 def test():
-    root = tk.Tk()
-    root.title("BOM Merger")
-    order = OrderSummary(root, ['TME', 'Farnel', 'Mouser', 'RS Components'])
-    order.pack()
+    app = wx.App()
+    frame = wx.Frame(None, id=wx.ID_ANY, title=u"test", pos=wx.DefaultPosition, size=wx.Size(500, 300),
+                     style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+    order = OrderSummary(frame, ['TME', 'Farnel', 'Mouser', 'RS Components'])
     order.update('Farnel', 10, 20)
-    root.mainloop()
+    frame.SetSizer(order)
+    frame.Show()
+    app.MainLoop()
 
 
 if __name__ == "__main__":
